@@ -84,6 +84,13 @@ android {
         buildConfigField("String", "SUPABASE_SECRET_KEY", "\"$supabaseSecretKey\"")
         buildConfigField("String", "SUPABASE_JWKS_URL", "\"$supabaseJwksUrl\"")
 
+        // Admin panel password from .env, local.properties, or environment variables
+        val adminPassword = envProperties.getProperty("ADMIN_PASSWORD")
+            ?: localProperties.getProperty("ADMIN_PASSWORD")
+            ?: System.getenv("ADMIN_PASSWORD")
+            ?: "beatwave67"
+        buildConfigField("String", "ADMIN_PASSWORD", "\"$adminPassword\"")
+
 //add nightly build label support
         val isNightly = project.hasProperty("nightly") && project.property("nightly") == "true"
         buildConfigField("Boolean", "IS_NIGHTLY", isNightly.toString())

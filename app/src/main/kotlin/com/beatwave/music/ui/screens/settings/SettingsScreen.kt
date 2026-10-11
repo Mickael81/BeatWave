@@ -100,7 +100,7 @@ fun SettingsScreen(
             confirmButton = {
                 androidx.compose.material3.TextButton(
                     onClick = {
-                        if (passwordInput == "admin00") {
+                        if (passwordInput == BuildConfig.ADMIN_PASSWORD) {
                             showAdminPasswordDialog = false
                             passwordInput = ""
                             navController.navigate("admin_panel")
