@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.component
@@ -71,7 +71,7 @@ const val AlphabetScrollBarMinItems = 20
 private val RailWidth = 28.dp
 
 /** Rail slot that jumps to index 0 rather than to a section. Drawn above "0". */
-private const val ScrollTopSection = "↑"
+private const val ScrollTopSection = "â†‘"
 
 /**
  * Fast-scrub rail pinned to the trailing edge of a long list: drag a finger down it and
@@ -87,7 +87,7 @@ private const val ScrollTopSection = "↑"
  *   never drops a section between two sampled pointer events.
  *
  * [sectionIndexMap] maps a section key to the list index where it starts. Sections with
- * no items are not skipped in the rail — they resolve to the next populated section
+ * no items are not skipped in the rail â€” they resolve to the next populated section
  * downward (see [findAlphabetTargetIndex]), which keeps the letters at fixed positions
  * so muscle memory survives a re-sort.
  */
@@ -264,13 +264,13 @@ fun AlphabetScrollBar(
 private const val ProportionalRailStops = 27
 
 /** Every stop draws the same tick; the rail is a position, not a label. */
-private const val ProportionalRailTick = "·"
+private const val ProportionalRailTick = "Â·"
 
 /**
  * The one call site every long list uses.
  *
  * Pass [sectionIndexMap] when the list is sorted alphabetically and the rail shows
- * letters. Pass null for any other sort — the rail stays, but becomes a proportional
+ * letters. Pass null for any other sort â€” the rail stays, but becomes a proportional
  * fast-scroll thumb instead of vanishing, which is the whole point: a scrubber that
  * disappears when you change the sort order is a scrubber nobody can rely on.
  *

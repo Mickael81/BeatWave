@@ -118,7 +118,7 @@ fun DynamicMashupDialog(
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Dynamic Mashup Mode",
+                            text = "🎧 DJ Song Mashup Studio",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                         )
@@ -138,7 +138,7 @@ fun DynamicMashupDialog(
                         }
                     }
                     Text(
-                        text = "Real-time line & verse DJ mix • Max 4 tracks",
+                        text = "Real-time AI phrase & verse DJ mixing • Up to 4 tracks",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

@@ -1,5 +1,5 @@
-/*
- * Convx Project (C) 2026
+﻿/*
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.component.backdrop.backdrops
@@ -22,7 +22,7 @@ private const val NavTransitionFreezeWindowNs = 330_000_000L
 
 /**
  * Time-boxed freeze for the app-level [layerBackdrop] across a screen-to-screen
- * navigation transition. [BackdropFreeze] only reacts to scroll gestures — a plain
+ * navigation transition. [BackdropFreeze] only reacts to scroll gestures â€” a plain
  * nav transition (slide + fade between two screens) is neither a scroll nor a
  * fling, so it never froze, and the backdrop re-recorded every frame of every
  * navigation for the transition's whole duration (the same per-frame cost already

@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.utils
@@ -17,7 +17,7 @@ import androidx.core.net.toUri
  * work, and several good ones already exist. This just opens the file in one.
  *
  * `ACTION_EDIT` with the file's audio mime type is what the established editors register
- * for. The read/write grants are the ones that make the target able to open it at all —
+ * for. The read/write grants are the ones that make the target able to open it at all â€”
  * a content URI is useless to another process without them.
  */
 object ExternalTagEditor {

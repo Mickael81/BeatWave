@@ -1,7 +1,7 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class)
+﻿@file:OptIn(ExperimentalSharedTransitionApi::class)
 
 /**
- * Convx Project (C) 2026
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.utils
@@ -47,7 +47,7 @@ import com.beatwave.music.ui.player.rememberScreenCornerRadius
 val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
 
 /**
- * The current destination's [AnimatedVisibilityScope] — the NavHost entry's own, which is
+ * The current destination's [AnimatedVisibilityScope] â€” the NavHost entry's own, which is
  * what tells the shared element which transition it is participating in.
  */
 val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }

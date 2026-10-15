@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.utils
@@ -15,13 +15,13 @@ import kotlin.system.measureTimeMillis
 
 /**
  * Asks every InnerTube client, one at a time, whether it can still produce a playable
- * stream — and says which ones did.
+ * stream â€” and says which ones did.
  *
  * Which clients YouTube honours is a moving target: they are fingerprints, and YouTube
  * silently starts rejecting them. When playback breaks for a lot of people at once the
  * question is never "is our fallback chain correct" (it is) but "which of these eleven
  * still work today", and that cannot be answered by reading source. It needs a real
- * request against a real videoId from a real device on a real network — which is also why
+ * request against a real videoId from a real device on a real network â€” which is also why
  * this lives in the app rather than in a unit test: the answer depends on the user's IP,
  * their login state and their region, and it differs between them.
  *
@@ -55,7 +55,7 @@ object YouTubeClientProbe {
     enum class Outcome(val symbol: String) {
         /** Returned a stream URL that a HEAD request confirmed is actually serving. */
         PLAYABLE("OK "),
-        /** Gave a stream URL, but fetching it failed — the usual shape of a stale fingerprint. */
+        /** Gave a stream URL, but fetching it failed â€” the usual shape of a stale fingerprint. */
         DEAD_URL("URL"),
         /** Player response came back, but with no usable audio format. */
         NO_FORMAT("FMT"),
@@ -63,7 +63,7 @@ object YouTubeClientProbe {
         REFUSED("NO "),
         /** Request itself failed or timed out. */
         ERROR("ERR"),
-        /** Not attempted — needs a login the user does not have. */
+        /** Not attempted â€” needs a login the user does not have. */
         SKIPPED("-- "),
     }
 
@@ -131,7 +131,7 @@ object YouTubeClientProbe {
     }
 
     /**
-     * A stream URL can be handed back and still 403 immediately — that is what a rejected
+     * A stream URL can be handed back and still 403 immediately â€” that is what a rejected
      * fingerprint usually looks like, and it is invisible unless the URL is actually
      * fetched. Range-limited to one byte so this costs nothing.
      */

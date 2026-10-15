@@ -340,19 +340,43 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                 ) {
                     Spacer(modifier = Modifier.height(80.dp))
 
-                    Text(
-                        text = stringResource(com.beatwave.music.R.string.welcome_to),
-                        style = thinHeaderStyle,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = stringResource(com.beatwave.music.R.string.app_name).uppercase(),
-                        fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 48.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        lineHeight = 56.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(18.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
+                            shadowElevation = 8.dp,
+                            modifier = Modifier.size(58.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(10.dp)) {
+                                androidx.compose.foundation.Image(
+                                    painter = painterResource(com.beatwave.music.R.drawable.beatwave_logo),
+                                    contentDescription = "BeatWave Logo",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                                )
+                            }
+                        }
+                        Column {
+                            Text(
+                                text = stringResource(com.beatwave.music.R.string.welcome_to),
+                                style = thinHeaderStyle,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = stringResource(com.beatwave.music.R.string.app_name).uppercase(),
+                                fontFamily = GoogleSansFlex,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 42.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                lineHeight = 46.sp
+                            )
+                        }
+                    }
 
                     val flavorSuffix = if (BuildConfig.FLAVOR.contains("gms", ignoreCase = true)) "Gms Edition" else "Foss Edition"
                     Row(
@@ -1298,17 +1322,22 @@ fun BeatWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
         // Center circular BeatWave emblem
         Surface(
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            border = androidx.compose.foundation.BorderStroke(2.dp, primaryColor.copy(alpha = 0.8f)),
-            shadowElevation = 8.dp,
-            modifier = Modifier.size(72.dp)
+            color = MaterialTheme.colorScheme.surface,
+            border = androidx.compose.foundation.BorderStroke(2.5.dp, primaryColor.copy(alpha = 0.9f)),
+            shadowElevation = 14.dp,
+            modifier = Modifier.size(80.dp)
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(com.beatwave.music.R.drawable.equalizer),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(14.dp)
+            ) {
+                androidx.compose.foundation.Image(
+                    painter = painterResource(com.beatwave.music.R.drawable.beatwave_logo),
+                    contentDescription = "BeatWave Logo",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
                 )
             }
         }

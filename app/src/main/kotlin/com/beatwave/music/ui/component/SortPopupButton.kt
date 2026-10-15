@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.component
@@ -49,7 +49,7 @@ data class SortOption<T>(val value: T, val labelRes: Int)
  *
  * Selection is shown with a tick on the chosen row rather than by changing the button
  * label, so the current sort is legible without opening anything only if the caller
- * also shows it — that is the trade a compact control makes, and why this is offered
+ * also shows it â€” that is the trade a compact control makes, and why this is offered
  * alongside [SortHeader] rather than replacing it everywhere.
  */
 @Composable
@@ -60,7 +60,7 @@ fun <T> SortPopupButton(
     onSelectedChange: (T) -> Unit,
     onDescendingChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    /** Extra rows above the sort fields — grid density, view style, whatever the screen has. */
+    /** Extra rows above the sort fields â€” grid density, view style, whatever the screen has. */
     leadingSection: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }

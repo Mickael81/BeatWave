@@ -394,8 +394,8 @@ fun YouTubeSongMenu(
                         )
                     } else null,
                     Material3MenuItemData(
-                        title = { Text(text = "Dynamic Mashup Mode") },
-                        description = { Text(text = "Mix with up to 4 tracks line-by-line in real time") },
+                        title = { Text(text = "🎧 DJ Song Mashup Studio") },
+                        description = { Text(text = "Real-time AI mixing & blending with up to 4 tracks") },
                         icon = {
                             Icon(
                                 painter = painterResource(R.drawable.equalizer),

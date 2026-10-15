@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.component
@@ -19,7 +19,7 @@ class AlphabetScrollBarTest {
         assertEquals("0", alphabetSectionKey("2Pac"))
         assertEquals("A", alphabetSectionKey("Abba"))
         assertEquals("A", alphabetSectionKey("  abba"))
-        assertEquals("#", alphabetSectionKey("Ólafur"))
+        assertEquals("#", alphabetSectionKey("Ã“lafur"))
         assertEquals("#", alphabetSectionKey(""))
     }
 

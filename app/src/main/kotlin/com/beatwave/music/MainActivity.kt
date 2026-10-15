@@ -29,6 +29,12 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.datastore.preferences.core.edit
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -2690,6 +2696,14 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+
+                // App Startup Animated Splash Overlay
+                var showAppSplash by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
+                if (showAppSplash) {
+                    AppStartupSplashScreen(
+                        onDismiss = { showAppSplash = false }
+                    )
+                }
             }
         }
     }
@@ -2782,6 +2796,155 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    @Composable
+    private fun AppStartupSplashScreen(
+        onDismiss: () -> Unit
+    ) {
+        var isVisible by remember { mutableStateOf(true) }
+        val alphaAnim by animateFloatAsState(
+            targetValue = if (isVisible) 1f else 0f,
+            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+            label = "splashAlpha",
+            finishedListener = { if (!isVisible) onDismiss() }
+        )
+
+        val scaleAnim by animateFloatAsState(
+            targetValue = if (isVisible) 1f else 1.12f,
+            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+            label = "splashScale"
+        )
+
+        val infiniteTransition = rememberInfiniteTransition(label = "pulseRing")
+        val pulseScale1 by infiniteTransition.animateFloat(
+            initialValue = 0.95f,
+            targetValue = 1.38f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "pulse1"
+        )
+        val pulseAlpha1 by infiniteTransition.animateFloat(
+            initialValue = 0.6f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "pulseAlpha1"
+        )
+
+        val pulseScale2 by infiniteTransition.animateFloat(
+            initialValue = 0.95f,
+            targetValue = 1.65f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1600, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "pulse2"
+        )
+        val pulseAlpha2 by infiniteTransition.animateFloat(
+            initialValue = 0.4f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1600, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "pulseAlpha2"
+        )
+
+        LaunchedEffect(Unit) {
+            delay(1200L)
+            isVisible = false
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    alpha = alphaAnim
+                    scaleX = scaleAnim
+                    scaleY = scaleAnim
+                }
+                .background(MaterialTheme.colorScheme.background)
+                .clickable(
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    indication = null
+                ) {
+                    isVisible = false
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            // Expanding Sonic Ripples
+            Box(
+                modifier = Modifier
+                    .size(150.dp)
+                    .graphicsLayer {
+                        scaleX = pulseScale2
+                        scaleY = pulseScale2
+                        alpha = pulseAlpha2
+                    }
+                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .size(150.dp)
+                    .graphicsLayer {
+                        scaleX = pulseScale1
+                        scaleY = pulseScale1
+                        alpha = pulseAlpha1
+                    }
+                    .border(2.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+            )
+
+            // Center BeatWave Emblem Card
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
+                    shadowElevation = 16.dp,
+                    modifier = Modifier.size(108.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.padding(18.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(com.beatwave.music.R.drawable.beatwave_logo),
+                            contentDescription = "BeatWave Logo",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                Text(
+                    text = "BEATWAVE",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 4.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(Modifier.height(6.dp))
+
+                Text(
+                    text = "SOUND IN MOTION",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
             }
         }
     }

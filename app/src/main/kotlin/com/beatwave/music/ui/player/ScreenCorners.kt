@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.player
@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
  *
  * Read from the window's actual [RoundedCorner] insets where the platform exposes them
  * (API 31+). Below that, and on devices that report no rounded corners at all, this
- * falls back to [FallbackScreenCornerRadius] — a wrong-but-plausible curve reads far
+ * falls back to [FallbackScreenCornerRadius] â€” a wrong-but-plausible curve reads far
  * better than a square corner on a rounded phone.
  *
  * Returns 0.dp when the player is not filling the display (split screen, PiP): the
@@ -82,7 +82,7 @@ fun rememberScreenCornerRadius(): Dp {
 
 /**
  * Used when the platform will not tell us the real corner radius. Sized to a typical
- * modern phone rather than to any particular device — it is only ever on screen for the
+ * modern phone rather than to any particular device â€” it is only ever on screen for the
  * final stretch of the expand animation before the corners open out to square.
  */
 val FallbackScreenCornerRadius = 28.dp

@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.component
@@ -76,8 +76,8 @@ private val ReflectionBlurRadius = 24.dp
  * an alpha ramp running from two thirds of the artwork height to its bottom edge, so the
  * top two thirds stay completely clear.
  *
- * Drawn on the GPU from the image already decoded for the artwork — a second AsyncImage
- * flipped in a graphics layer — rather than built on the CPU as a blurred, mesh-warped,
+ * Drawn on the GPU from the image already decoded for the artwork â€” a second AsyncImage
+ * flipped in a graphics layer â€” rather than built on the CPU as a blurred, mesh-warped,
  * disk-cached derivative per track. Coil hands back the same cache entry, so there is no
  * second decode, no cache of our own to maintain, and no bitmap held alive per card.
  *

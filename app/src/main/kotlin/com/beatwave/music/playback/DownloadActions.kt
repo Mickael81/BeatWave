@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 
@@ -39,7 +39,7 @@ data class DownloadTarget(
 /**
  * Whether [state] means a download should be (re)queued.
  *
- * `null` is a song we have never downloaded. FAILED and STOPPED are the retry cases — a
+ * `null` is a song we have never downloaded. FAILED and STOPPED are the retry cases â€” a
  * network drop leaves downloads there, and re-queuing them is the entire point of tapping
  * download again. COMPLETED is skipped so a retry does not refetch finished songs;
  * QUEUED/DOWNLOADING/RESTARTING are skipped because the work is already scheduled.
@@ -53,7 +53,7 @@ fun shouldQueueDownload(state: Int?): Boolean = when (state) {
  * Whether [state] means a *cancel* should remove this download.
  *
  * COMPLETED is deliberately excluded: cancelling in-flight work must never delete files
- * that already finished. Deleting a finished download is a separate, explicit action —
+ * that already finished. Deleting a finished download is a separate, explicit action â€”
  * see [removeDownloads].
  */
 fun shouldCancelDownload(state: Int?): Boolean = when (state) {
@@ -118,7 +118,7 @@ fun cancelDownloads(
  * Delete downloads for [ids] whatever state they are in.
  *
  * This is the explicit "remove download" action, reached from a confirmation dialog. Do
- * not call it to cancel an in-progress download — use [cancelDownloads].
+ * not call it to cancel an in-progress download â€” use [cancelDownloads].
  */
 @UnstableApi
 fun removeDownloads(

@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.player
@@ -13,15 +13,15 @@ import androidx.compose.ui.util.lerp
  * sheet sliding up over the top of a separate mini player.
  *
  * The reason this reads better than a straight interpolation is that nothing here moves
- * on a single curve — each axis of each element gets its own, and the
+ * on a single curve â€” each axis of each element gets its own, and the
  * asymmetry is the whole effect:
  *
  * - The container's **height** tracks progress linearly while its **width** runs on
  *   [easeInCubic]. The sheet therefore grows tall first and only flares out to full width
  *   near the end, which is what makes it look like it is rising out of the bar instead of
  *   inflating in place.
- * - The artwork's **x** runs on [easeOutCubic] — it commits to its horizontal position
- *   early, so the cover appears to lead the motion — while its **y** is a blend of
+ * - The artwork's **x** runs on [easeOutCubic] â€” it commits to its horizontal position
+ *   early, so the cover appears to lead the motion â€” while its **y** is a blend of
  *   [easeInCubic] and linear ([ARTWORK_VERTICAL_LINEAR_WEIGHT]), keeping vertical travel
  *   closer to the finger during a drag.
  *
@@ -60,7 +60,7 @@ fun sharedContainerRect(source: Rect, target: Rect, progress: Float): Rect {
     val fraction = progress.coerceIn(0f, 1f)
     val centerX = lerp(source.center.x, target.center.x, fraction)
     val centerY = lerp(source.center.y, target.center.y, fraction)
-    // Width lags behind height on purpose — see the class doc.
+    // Width lags behind height on purpose â€” see the class doc.
     val width = lerp(source.width, target.width, easeInCubic(fraction))
     val height = lerp(source.height, target.height, fraction)
     return Rect(
@@ -106,7 +106,7 @@ fun sharedArtworkRect(source: Rect, target: Rect, progress: Float): Rect {
  * Width of the progress band over which the screen-corner expansion fades out.
  *
  * Gating the expansion on `progress == 1f` exactly is fine on the way
- * in — the corners open out after the sheet has settled — but it pops on the way out: the
+ * in â€” the corners open out after the sheet has settled â€” but it pops on the way out: the
  * first pixel of a downward drag takes progress off 1f, which kills the expansion in one
  * frame and snaps the radius from square back to the full screen radius. Fading the
  * expansion across the top slice of the drag removes the jump while still keeping the
@@ -118,7 +118,7 @@ const val CORNER_EXPANSION_PROGRESS_BAND = 0.02f
  * Corner radius for the sheet at [progress].
  *
  * Two stages. Through the transition the radius runs from the mini player's corner to
- * [expandedCornerRadius] — which should be the device's *physical* screen corner radius,
+ * [expandedCornerRadius] â€” which should be the device's *physical* screen corner radius,
  * not a design value, so the sheet's corners sit exactly on the glass. Then, as the sheet
  * settles, [screenCornerExpansionProgress] takes the radius to zero so the player fills
  * the display edge to edge and the glass itself provides the rounding.

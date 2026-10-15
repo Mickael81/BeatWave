@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.screens.library
@@ -60,7 +60,7 @@ import com.beatwave.music.utils.rememberPreference
  * Every song on the device, in one flat list.
  *
  * This is the tab local-only mode adds. The library's own Songs screen still exists and
- * still has its filter chips; this one deliberately has none — it is the whole on-device
+ * still has its filter chips; this one deliberately has none â€” it is the whole on-device
  * library and nothing else, which is what makes the alphabet rail meaningful here.
  *
  * Sorting happens in memory rather than by re-querying: the local library is already a

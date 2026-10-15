@@ -9,6 +9,12 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 
@@ -1403,13 +1409,10 @@ fun HomeScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(globalAccent)
+                                AnimatedEqualizerIndicator(
+                                    color = globalAccent,
                                 )
                                 Text(
                                     text = when {
@@ -3229,3 +3232,58 @@ private fun rememberSongsById(
 
 /** Cards on local mode's spotlight shelf. A shelf, not the library. */
 private const val LocalSpotlightCount = 15
+
+@Composable
+fun AnimatedEqualizerIndicator(
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    val transition = rememberInfiniteTransition(label = "HomeEqualizer")
+    val bar1Height by transition.animateFloat(
+        initialValue = 4f,
+        targetValue = 14f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 450, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bar1"
+    )
+    val bar2Height by transition.animateFloat(
+        initialValue = 14f,
+        targetValue = 6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 550, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bar2"
+    )
+    val bar3Height by transition.animateFloat(
+        initialValue = 8f,
+        targetValue = 16f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 380, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bar3"
+    )
+    val bar4Height by transition.animateFloat(
+        initialValue = 12f,
+        targetValue = 5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 620, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bar4"
+    )
+
+    Row(
+        modifier = modifier.height(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.5.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        Box(Modifier.width(2.5.dp).height(bar1Height.dp).clip(RoundedCornerShape(1.dp)).background(color))
+        Box(Modifier.width(2.5.dp).height(bar2Height.dp).clip(RoundedCornerShape(1.dp)).background(color))
+        Box(Modifier.width(2.5.dp).height(bar3Height.dp).clip(RoundedCornerShape(1.dp)).background(color))
+        Box(Modifier.width(2.5.dp).height(bar4Height.dp).clip(RoundedCornerShape(1.dp)).background(color))
+    }
+}

@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.screens.settings
@@ -51,7 +51,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 /**
  * One arrangeable row on Home, as the user sees it.
  *
- * [id] must match the corresponding `HomeSection.id` — that string is the contract
+ * [id] must match the corresponding `HomeSection.id` â€” that string is the contract
  * between this screen and Home's sort, and is what makes a saved arrangement survive a
  * section being renamed in the UI.
  */
@@ -94,7 +94,7 @@ fun HomeFeedOrderScreen(
     }
 
     // Seeded from the saved arrangement, with anything it does not mention appended in
-    // default order — so a section added by a later release shows up here rather than
+    // default order â€” so a section added by a later release shows up here rather than
     // being invisible and unarrangeable.
     val rows = remember {
         mutableStateListOf<HomeFeedRow>().apply {

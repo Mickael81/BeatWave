@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.ui.component
@@ -37,7 +37,7 @@ import com.beatwave.music.ui.component.shapes.ContinuousRoundedRectangle
 /**
  * The long-press actions, as an overlay rather than a bottom sheet.
  *
- * Same [MenuState] and therefore the same call sites: every `menuState.show { … }` in the
+ * Same [MenuState] and therefore the same call sites: every `menuState.show { â€¦ }` in the
  * app goes through here or through [BottomSheetMenu] depending on one preference, and
  * neither the menus themselves nor the ~30 places that open them know which is in use.
  *

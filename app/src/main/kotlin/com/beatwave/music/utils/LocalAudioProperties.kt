@@ -1,5 +1,5 @@
-/**
- * Convx Project (C) 2026
+﻿/**
+ * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 package com.beatwave.music.utils
@@ -16,7 +16,7 @@ import kotlinx.coroutines.withContext
  *
  * Nothing in the database records this: only the YouTube playback and download paths
  * write a `FormatEntity`, so an on-device file has no codec, sample rate or bitrate
- * stored anywhere. Read on demand rather than scanned into a column — it needs no schema
+ * stored anywhere. Read on demand rather than scanned into a column â€” it needs no schema
  * change, and it stays correct if the file is replaced under the same MediaStore id.
  */
 data class LocalAudioProperties(
@@ -43,7 +43,7 @@ data class LocalAudioProperties(
  * and a mime type but no sample rate or channel count, which are the two numbers that
  * actually distinguish a lossless file from a transcode.
  *
- * Returns null rather than throwing for anything unreadable — a missing properties row is
+ * Returns null rather than throwing for anything unreadable â€” a missing properties row is
  * a far better outcome than a crash on a malformed file, and files arrive here from the
  * user's own storage where nothing is guaranteed.
  */
