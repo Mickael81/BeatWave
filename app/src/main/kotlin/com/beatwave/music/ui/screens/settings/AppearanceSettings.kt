@@ -567,6 +567,15 @@ fun AppearanceSettings(
                             AppFont.SANS_FLEX -> stringResource(R.string.font_sans_flex)
                             AppFont.OUTFIT -> stringResource(R.string.font_outfit)
                             AppFont.PLUS_JAKARTA_SANS -> stringResource(R.string.font_plus_jakarta_sans)
+                            AppFont.CHILLAX -> "Chillax Geometric"
+                            AppFont.CHILLAX_BOLD -> "Chillax Bold"
+                            AppFont.CHILLAX_LIGHT -> "Chillax Light"
+                            AppFont.BBH_BARTLE -> "BBH Bartle Retro"
+                            AppFont.MONOSPACE -> "Cyber Monospace"
+                            AppFont.SERIF -> "Classic Editorial Serif"
+                            AppFont.CURSIVE -> "Acoustic Cursive"
+                            AppFont.SANS_SERIF -> "Clean Sans-Serif"
+                            else -> stringResource(R.string.font_system)
                         }
                         Text(fontLabel)
                     },

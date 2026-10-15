@@ -110,7 +110,7 @@ object DynamicMashupController {
         totalSwaps++
         secondsRemaining = getIntervalForStyle(currentStyle)
 
-        conn.seekTo(nextIndex, targetPos)
+        conn.player.seekTo(nextIndex, targetPos)
     }
 
     fun stopMashup() {

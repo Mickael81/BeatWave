@@ -81,6 +81,9 @@ import com.beatwave.music.constants.PlayerArtworkStyle
 import com.beatwave.music.constants.PlayerArtworkStyleKey
 import com.beatwave.music.constants.PlayerBackgroundStyle
 import com.beatwave.music.constants.PlayerBackgroundStyleKey
+import com.beatwave.music.constants.PlayerButtonsStyle
+import com.beatwave.music.constants.PlayerButtonsStyleKey
+import com.beatwave.music.constants.MiniPlayerBackgroundStyleKey
 import com.beatwave.music.constants.PlayerGradientAngleKey
 import com.beatwave.music.constants.PlayerGradientStopsKey
 import com.beatwave.music.constants.PlayerLayoutHiddenSlotsKey
@@ -154,6 +157,12 @@ fun PlayerThemeScreen(
         PlayerThumbnailShadowElevationKey, defaultValue = 8f
     )
     val (showUpNext, onShowUpNextChange) = rememberPreference(ShowUpNextKey, defaultValue = false)
+    val (playerButtonsStyle, onPlayerButtonsStyleChange) = rememberEnumPreference(
+        PlayerButtonsStyleKey, defaultValue = PlayerButtonsStyle.DEFAULT
+    )
+    val (miniPlayerBackground, onMiniPlayerBackgroundChange) = rememberEnumPreference(
+        MiniPlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.DEFAULT
+    )
     val gradientStops = remember(gradientStopsRaw) { decodeGradientStops(gradientStopsRaw) }
 
     var showStaticPicker by rememberSaveable { mutableStateOf(false) }
@@ -333,6 +342,117 @@ fun PlayerThemeScreen(
                         gradientStops = gradientStops,
                         gradientAngle = gradientAngle,
                     )
+                }
+            }
+        }
+
+        SectionTitle(stringResource(R.string.player_buttons_style))
+        PresetRow {
+            PlayerButtonsStyle.entries.forEach { style ->
+                val label = when (style) {
+                    PlayerButtonsStyle.DEFAULT -> stringResource(R.string.default_style)
+                    PlayerButtonsStyle.PRIMARY -> stringResource(R.string.primary_color_style)
+                    PlayerButtonsStyle.TERTIARY -> stringResource(R.string.tertiary_color_style)
+                }
+                PresetCard(
+                    label = label,
+                    selected = playerButtonsStyle == style,
+                    onClick = { onPlayerButtonsStyleChange(style) },
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.85f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        val iconColor = when (style) {
+                            PlayerButtonsStyle.DEFAULT -> Color.White
+                            PlayerButtonsStyle.PRIMARY -> MaterialTheme.colorScheme.primary
+                            PlayerButtonsStyle.TERTIARY -> MaterialTheme.colorScheme.tertiary
+                        }
+                        val bgBoxColor = when (style) {
+                            PlayerButtonsStyle.DEFAULT -> Color.Transparent
+                            PlayerButtonsStyle.PRIMARY -> MaterialTheme.colorScheme.primaryContainer
+                            PlayerButtonsStyle.TERTIARY -> MaterialTheme.colorScheme.tertiaryContainer
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(bgBoxColor),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.play),
+                                contentDescription = null,
+                                tint = iconColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        SectionTitle("Mini-Player Style")
+        PresetRow {
+            listOf(
+                PlayerBackgroundStyle.DEFAULT,
+                PlayerBackgroundStyle.GRADIENT,
+                PlayerBackgroundStyle.BLUR,
+                PlayerBackgroundStyle.GLOW_ANIMATED,
+                PlayerBackgroundStyle.APPLE_MUSIC,
+            ).filter {
+                it != PlayerBackgroundStyle.BLUR || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            }.forEach { style ->
+                PresetCard(
+                    label = backgroundLabel(style),
+                    selected = miniPlayerBackground == style,
+                    onClick = { onMiniPlayerBackgroundChange(style) },
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    when (style) {
+                                        PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.surfaceVariant
+                                        PlayerBackgroundStyle.GRADIENT -> Brush.horizontalGradient(listOf(Color(0xFF6366F1), Color(0xFFA855F7)))
+                                        PlayerBackgroundStyle.GLOW_ANIMATED -> Brush.horizontalGradient(listOf(Color(0xFFEC4899), Color(0xFF8B5CF6)))
+                                        PlayerBackgroundStyle.APPLE_MUSIC -> Brush.verticalGradient(listOf(Color(0xFF2E0854), Color(0xFF1E1B4B)))
+                                        else -> MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                ),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color.White.copy(alpha = 0.4f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(36.dp)
+                                        .height(5.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White.copy(alpha = 0.6f))
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

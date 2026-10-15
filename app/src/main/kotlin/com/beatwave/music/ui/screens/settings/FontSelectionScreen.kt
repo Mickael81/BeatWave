@@ -59,15 +59,13 @@ import com.beatwave.music.ui.theme.OutfitFontFamily
 import com.beatwave.music.ui.theme.PlusJakartaSansFontFamily
 import com.beatwave.music.ui.theme.SansFlexFontFamily
 import com.beatwave.music.ui.theme.ChillaxFontFamily
+import com.beatwave.music.ui.theme.ChillaxBoldFontFamily
+import com.beatwave.music.ui.theme.ChillaxLightFontFamily
 import com.beatwave.music.ui.theme.BbhBartleFontFamily
 import com.beatwave.music.ui.theme.MonospaceFontFamily
 import com.beatwave.music.ui.theme.SerifFontFamily
 import com.beatwave.music.ui.theme.CursiveFontFamily
-import com.beatwave.music.ui.theme.CondensedFontFamily
-import com.beatwave.music.ui.theme.CasualFontFamily
-import com.beatwave.music.ui.theme.SerifMonospaceFontFamily
-import com.beatwave.music.ui.theme.PunchySansFontFamily
-import com.beatwave.music.ui.theme.HeavyBlackFontFamily
+import com.beatwave.music.ui.theme.SansSerifFontFamily
 import com.beatwave.music.ui.theme.copyCustomFont
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import com.beatwave.music.ui.utils.backToMain
@@ -131,15 +129,14 @@ fun FontSelectionScreen(
             AppFont.OUTFIT -> OutfitFontFamily
             AppFont.PLUS_JAKARTA_SANS -> PlusJakartaSansFontFamily
             AppFont.CHILLAX -> ChillaxFontFamily
+            AppFont.CHILLAX_BOLD -> ChillaxBoldFontFamily
+            AppFont.CHILLAX_LIGHT -> ChillaxLightFontFamily
             AppFont.BBH_BARTLE -> BbhBartleFontFamily
             AppFont.MONOSPACE -> MonospaceFontFamily
             AppFont.SERIF -> SerifFontFamily
             AppFont.CURSIVE -> CursiveFontFamily
-            AppFont.CONDENSED -> CondensedFontFamily
-            AppFont.CASUAL -> CasualFontFamily
-            AppFont.SERIF_MONOSPACE -> SerifMonospaceFontFamily
-            AppFont.PUNCHY_SANS -> PunchySansFontFamily
-            AppFont.HEAVY_BLACK -> HeavyBlackFontFamily
+            AppFont.SANS_SERIF -> SansSerifFontFamily
+            else -> FontFamily.Default
         }
     }
 
@@ -349,6 +346,48 @@ fun FontSelectionScreen(
                     Material3SettingsItem(
                         leadingContent = {
                             RadioButton(
+                                selected = selectedFont == AppFont.CHILLAX_BOLD.value,
+                                onClick = null
+                            )
+                        },
+                        title = {
+                            Text(
+                                text = "Chillax Bold Headline",
+                                fontFamily = ChillaxBoldFontFamily
+                            )
+                        },
+                        description = {
+                            Text(
+                                text = "Punchy heavyweight modern geometric sans-serif",
+                                fontFamily = ChillaxBoldFontFamily
+                            )
+                        },
+                        onClick = { onSelectedFontChange(AppFont.CHILLAX_BOLD.value) }
+                    ),
+                    Material3SettingsItem(
+                        leadingContent = {
+                            RadioButton(
+                                selected = selectedFont == AppFont.CHILLAX_LIGHT.value,
+                                onClick = null
+                            )
+                        },
+                        title = {
+                            Text(
+                                text = "Chillax Light Elegance",
+                                fontFamily = ChillaxLightFontFamily
+                            )
+                        },
+                        description = {
+                            Text(
+                                text = "Airy delicate geometric letterforms",
+                                fontFamily = ChillaxLightFontFamily
+                            )
+                        },
+                        onClick = { onSelectedFontChange(AppFont.CHILLAX_LIGHT.value) }
+                    ),
+                    Material3SettingsItem(
+                        leadingContent = {
+                            RadioButton(
                                 selected = selectedFont == AppFont.BBH_BARTLE.value,
                                 onClick = null
                             )
@@ -433,107 +472,23 @@ fun FontSelectionScreen(
                     Material3SettingsItem(
                         leadingContent = {
                             RadioButton(
-                                selected = selectedFont == AppFont.CONDENSED.value,
+                                selected = selectedFont == AppFont.SANS_SERIF.value,
                                 onClick = null
                             )
                         },
                         title = {
                             Text(
-                                text = "Condensed Poster Sans",
-                                fontFamily = CondensedFontFamily
+                                text = "Clean Sans-Serif",
+                                fontFamily = SansSerifFontFamily
                             )
                         },
                         description = {
                             Text(
-                                text = "High-impact condensed display typeface for punchy titles",
-                                fontFamily = CondensedFontFamily
+                                text = "Pure neutral neo-grotesque for maximum clarity",
+                                fontFamily = SansSerifFontFamily
                             )
                         },
-                        onClick = { onSelectedFontChange(AppFont.CONDENSED.value) }
-                    ),
-                    Material3SettingsItem(
-                        leadingContent = {
-                            RadioButton(
-                                selected = selectedFont == AppFont.CASUAL.value,
-                                onClick = null
-                            )
-                        },
-                        title = {
-                            Text(
-                                text = "Casual Indie",
-                                fontFamily = CasualFontFamily
-                            )
-                        },
-                        description = {
-                            Text(
-                                text = "Relaxed, friendly, warm hand-tuned letterforms",
-                                fontFamily = CasualFontFamily
-                            )
-                        },
-                        onClick = { onSelectedFontChange(AppFont.CASUAL.value) }
-                    ),
-                    Material3SettingsItem(
-                        leadingContent = {
-                            RadioButton(
-                                selected = selectedFont == AppFont.SERIF_MONOSPACE.value,
-                                onClick = null
-                            )
-                        },
-                        title = {
-                            Text(
-                                text = "Vintage Typewriter",
-                                fontFamily = SerifMonospaceFontFamily
-                            )
-                        },
-                        description = {
-                            Text(
-                                text = "Lo-Fi indie typewriter aesthetic with mechanical charm",
-                                fontFamily = SerifMonospaceFontFamily
-                            )
-                        },
-                        onClick = { onSelectedFontChange(AppFont.SERIF_MONOSPACE.value) }
-                    ),
-                    Material3SettingsItem(
-                        leadingContent = {
-                            RadioButton(
-                                selected = selectedFont == AppFont.PUNCHY_SANS.value,
-                                onClick = null
-                            )
-                        },
-                        title = {
-                            Text(
-                                text = "Punchy Sans Medium",
-                                fontFamily = PunchySansFontFamily
-                            )
-                        },
-                        description = {
-                            Text(
-                                text = "Modern bold streaming interface sans-serif",
-                                fontFamily = PunchySansFontFamily
-                            )
-                        },
-                        onClick = { onSelectedFontChange(AppFont.PUNCHY_SANS.value) }
-                    ),
-                    Material3SettingsItem(
-                        leadingContent = {
-                            RadioButton(
-                                selected = selectedFont == AppFont.HEAVY_BLACK.value,
-                                onClick = null
-                            )
-                        },
-                        title = {
-                            Text(
-                                text = "Heavy Impact Black",
-                                fontFamily = HeavyBlackFontFamily
-                            )
-                        },
-                        description = {
-                            Text(
-                                text = "Ultra-bold heavyweight album display font",
-                                fontFamily = HeavyBlackFontFamily
-                            )
-                        },
-                        onClick = { onSelectedFontChange(AppFont.HEAVY_BLACK.value) }
+                        onClick = { onSelectedFontChange(AppFont.SANS_SERIF.value) }
                     )
                 )
             )

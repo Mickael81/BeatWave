@@ -57,15 +57,13 @@ enum class AppFont(val value: String) {
     OUTFIT("outfit"),
     PLUS_JAKARTA_SANS("plus_jakarta_sans"),
     CHILLAX("chillax"),
+    CHILLAX_BOLD("chillax_bold"),
+    CHILLAX_LIGHT("chillax_light"),
     BBH_BARTLE("bbh_bartle"),
     MONOSPACE("monospace"),
     SERIF("serif"),
     CURSIVE("cursive"),
-    CONDENSED("condensed"),
-    CASUAL("casual"),
-    SERIF_MONOSPACE("serif_monospace"),
-    PUNCHY_SANS("punchy_sans"),
-    HEAVY_BLACK("heavy_black");
+    SANS_SERIF("sans_serif");
 
     companion object {
         fun fromValue(value: String): AppFont = entries.find { it.value == value } ?: SYSTEM
