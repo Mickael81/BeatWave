@@ -251,12 +251,49 @@ fun PlayerThemeScreen(
             }
         }
 
-        SectionTitle(stringResource(R.string.apple_music_player_v17))
+        SectionTitle("Player Interface UI")
+        SwitchPreference(
+            title = { Text("New Modern Player UI") },
+            description = if (useAppleMusicPlayer) "Using New Modern UI. Turn off to switch back to Original UI." else "Using Original Classic UI. Turn on for New Modern UI.",
+            checked = useAppleMusicPlayer,
+            onCheckedChange = onUseAppleMusicPlayerChange,
+        )
         PresetRow {
             PresetCard(
-                label = stringResource(R.string.apple_music_player_v17),
+                label = "Original UI",
+                selected = !useAppleMusicPlayer,
+                onClick = { onUseAppleMusicPlayerChange(false) },
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.music_note),
+                            contentDescription = null,
+                            tint = if (!useAppleMusicPlayer) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(32.dp),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Original UI",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (!useAppleMusicPlayer) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            PresetCard(
+                label = "New UI",
                 selected = useAppleMusicPlayer,
-                onClick = { onUseAppleMusicPlayerChange(!useAppleMusicPlayer) },
+                onClick = { onUseAppleMusicPlayerChange(true) },
             ) {
                 Box(
                     modifier = Modifier
@@ -264,11 +301,23 @@ fun PlayerThemeScreen(
                         .background(Color.Black),
                     contentAlignment = Alignment.Center,
                 ) {
-                    androidx.compose.foundation.Image(
-                        painter = painterResource(R.drawable.beatwave_logo),
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        androidx.compose.foundation.Image(
+                            painter = painterResource(R.drawable.beatwave_logo),
+                            contentDescription = null,
+                            modifier = Modifier.size(36.dp),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "New UI",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (useAppleMusicPlayer) MaterialTheme.colorScheme.primary else Color.White
+                        )
+                    }
                 }
             }
         }
@@ -421,13 +470,13 @@ fun PlayerThemeScreen(
                                 .fillMaxWidth()
                                 .height(32.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(
+                                .then(
                                     when (style) {
-                                        PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.surfaceVariant
-                                        PlayerBackgroundStyle.GRADIENT -> Brush.horizontalGradient(listOf(Color(0xFF6366F1), Color(0xFFA855F7)))
-                                        PlayerBackgroundStyle.GLOW_ANIMATED -> Brush.horizontalGradient(listOf(Color(0xFFEC4899), Color(0xFF8B5CF6)))
-                                        PlayerBackgroundStyle.APPLE_MUSIC -> Brush.verticalGradient(listOf(Color(0xFF2E0854), Color(0xFF1E1B4B)))
-                                        else -> MaterialTheme.colorScheme.surfaceVariant
+                                        PlayerBackgroundStyle.DEFAULT -> Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
+                                        PlayerBackgroundStyle.GRADIENT -> Modifier.background(Brush.horizontalGradient(listOf(Color(0xFF6366F1), Color(0xFFA855F7))))
+                                        PlayerBackgroundStyle.GLOW_ANIMATED -> Modifier.background(Brush.horizontalGradient(listOf(Color(0xFFEC4899), Color(0xFF8B5CF6))))
+                                        PlayerBackgroundStyle.APPLE_MUSIC -> Modifier.background(Brush.verticalGradient(listOf(Color(0xFF2E0854), Color(0xFF1E1B4B))))
+                                        else -> Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
                                     }
                                 ),
                             contentAlignment = Alignment.CenterStart
