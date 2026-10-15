@@ -494,12 +494,10 @@ fun DynamicMashupDialog(
             Button(
                 onClick = {
                     if (playerConnection != null && selectedTracks.isNotEmpty()) {
-                        val mediaItems = selectedTracks.map { it.toMediaItem() }
-                        playerConnection.playQueue(
-                            ListQueue(
-                                title = "Dynamic Mashup (${selectedTracks.size} Tracks)",
-                                items = mediaItems
-                            )
+                        com.beatwave.music.playback.DynamicMashupController.startMashup(
+                            selectedTracks = selectedTracks.toList(),
+                            style = selectedStyle,
+                            playerConnection = playerConnection
                         )
                         Toast.makeText(
                             context,

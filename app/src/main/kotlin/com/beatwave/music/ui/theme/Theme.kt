@@ -99,6 +99,16 @@ fun vivimusicTheme(
             AppFont.SANS_FLEX -> SansFlexFontFamily
             AppFont.OUTFIT -> OutfitFontFamily
             AppFont.PLUS_JAKARTA_SANS -> PlusJakartaSansFontFamily
+            AppFont.CHILLAX -> ChillaxFontFamily
+            AppFont.BBH_BARTLE -> BbhBartleFontFamily
+            AppFont.MONOSPACE -> MonospaceFontFamily
+            AppFont.SERIF -> SerifFontFamily
+            AppFont.CURSIVE -> CursiveFontFamily
+            AppFont.CONDENSED -> CondensedFontFamily
+            AppFont.CASUAL -> CasualFontFamily
+            AppFont.SERIF_MONOSPACE -> SerifMonospaceFontFamily
+            AppFont.PUNCHY_SANS -> PunchySansFontFamily
+            AppFont.HEAVY_BLACK -> HeavyBlackFontFamily
         }
     }
 

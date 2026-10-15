@@ -562,31 +562,31 @@ private val BuiltinThemePresets = listOf(
         nameRes = R.string.theme_preset_sunset_amber,
         darkMode = DarkMode.ON,
         pureBlack = false,
-        themeColor = Color(0xFFF59E0B),
-        backgroundColor = Color(0xFF170E08),
-        textColor = Color(0xFFFEF3C7),
+        themeColor = Color(0xFFFF6D00),
+        backgroundColor = Color(0xFF1F0D03),
+        textColor = Color(0xFFFFD180),
         dynamicTheme = false,
-        previewGradient = listOf(Color(0xFF170E08), Color(0xFF78350F), Color(0xFFF59E0B))
+        previewGradient = listOf(Color(0xFF1F0D03), Color(0xFFD84315), Color(0xFFFF6D00))
     ),
     ThemePresetItem(
         nameRes = R.string.theme_preset_nordic_slate,
         darkMode = DarkMode.ON,
         pureBlack = false,
-        themeColor = Color(0xFF38BDF8),
-        backgroundColor = Color(0xFF0B0F17),
-        textColor = Color(0xFFF1F5F9),
+        themeColor = Color(0xFF93C5FD),
+        backgroundColor = Color(0xFF0F172A),
+        textColor = Color(0xFFE2E8F0),
         dynamicTheme = false,
-        previewGradient = listOf(Color(0xFF0B0F17), Color(0xFF1E293B), Color(0xFF38BDF8))
+        previewGradient = listOf(Color(0xFF0F172A), Color(0xFF334155), Color(0xFF93C5FD))
     ),
     ThemePresetItem(
         nameRes = R.string.theme_preset_kyoto_matcha,
         darkMode = DarkMode.ON,
         pureBlack = false,
-        themeColor = Color(0xFF84CC16),
-        backgroundColor = Color(0xFF0C160F),
-        textColor = Color(0xFFECFDF5),
+        themeColor = Color(0xFF588157),
+        backgroundColor = Color(0xFF0B170E),
+        textColor = Color(0xFFEDF4ED),
         dynamicTheme = false,
-        previewGradient = listOf(Color(0xFF0C160F), Color(0xFF1B3822), Color(0xFF84CC16))
+        previewGradient = listOf(Color(0xFF0B170E), Color(0xFF344E41), Color(0xFF588157))
     ),
     ThemePresetItem(
         nameRes = R.string.theme_preset_royal_amethyst,
@@ -602,21 +602,21 @@ private val BuiltinThemePresets = listOf(
         nameRes = R.string.theme_preset_mocha_espresso,
         darkMode = DarkMode.ON,
         pureBlack = false,
-        themeColor = Color(0xFFD97706),
-        backgroundColor = Color(0xFF160D07),
-        textColor = Color(0xFFFEF3C7),
+        themeColor = Color(0xFFBCAAA4),
+        backgroundColor = Color(0xFF150D0A),
+        textColor = Color(0xFFEFEBE9),
         dynamicTheme = false,
-        previewGradient = listOf(Color(0xFF160D07), Color(0xFF451A03), Color(0xFFD97706))
+        previewGradient = listOf(Color(0xFF150D0A), Color(0xFF4E342E), Color(0xFFBCAAA4))
     ),
     ThemePresetItem(
         nameRes = R.string.theme_preset_pacific_abyss,
         darkMode = DarkMode.ON,
         pureBlack = false,
-        themeColor = Color(0xFF06B6D4),
-        backgroundColor = Color(0xFF04121A),
-        textColor = Color(0xFFE0F7FA),
+        themeColor = Color(0xFF00F5D4),
+        backgroundColor = Color(0xFF021B2B),
+        textColor = Color(0xFFE0FFFA),
         dynamicTheme = false,
-        previewGradient = listOf(Color(0xFF04121A), Color(0xFF164E63), Color(0xFF06B6D4))
+        previewGradient = listOf(Color(0xFF021B2B), Color(0xFF005F73), Color(0xFF00F5D4))
     ),
     ThemePresetItem(
         nameRes = R.string.theme_preset_bordeaux_crimson,
@@ -632,11 +632,11 @@ private val BuiltinThemePresets = listOf(
         nameRes = R.string.theme_preset_tokyo_monolith,
         darkMode = DarkMode.ON,
         pureBlack = false,
-        themeColor = Color(0xFF94A3B8),
-        backgroundColor = Color(0xFF0D0D11),
+        themeColor = Color(0xFFF4F4F5),
+        backgroundColor = Color(0xFF09090B),
         textColor = Color(0xFFFFFFFF),
         dynamicTheme = false,
-        previewGradient = listOf(Color(0xFF0D0D11), Color(0xFF27272A), Color(0xFFCBD5E1))
+        previewGradient = listOf(Color(0xFF09090B), Color(0xFF27272A), Color(0xFFF4F4F5))
     ),
     ThemePresetItem(
         nameRes = R.string.theme_preset_material_you,

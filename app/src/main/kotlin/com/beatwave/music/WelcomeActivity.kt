@@ -375,7 +375,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        RotatingShapeContainer(
+                        BeatWaveSonicWaveformVisualizer(
                             modifier = Modifier.size(280.dp)
                         )
 
@@ -924,24 +924,12 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            // iOS-style crossfade: the outgoing page blurs, shrinks
-                            // slightly and slides out while the incoming page does
-                            // the reverse — driven by the pager's own scroll
-                            // animation, so it plays during animateScrollToPage too.
                             val pageOffset = pagerState.getOffsetDistanceInPages(index)
                             val absOffset = pageOffset.absoluteValue.coerceIn(0f, 1f)
                             alpha = 1f - absOffset
-                            translationX = pageOffset * size.width * 0.2f
-                            scaleX = 1f - absOffset * 0.08f
-                            scaleY = 1f - absOffset * 0.08f
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                val blurPx = absOffset * 32.dp.toPx()
-                                renderEffect = if (blurPx > 0f) {
-                                    android.graphics.RenderEffect
-                                        .createBlurEffect(blurPx, blurPx, android.graphics.Shader.TileMode.CLAMP)
-                                        .asComposeRenderEffect()
-                                } else null
-                            }
+                            translationX = pageOffset * size.width * 0.15f
+                            scaleX = 1f - absOffset * 0.05f
+                            scaleY = 1f - absOffset * 0.05f
                         }
                 ) {
                     pages[index].content { scrolledToEnd ->
@@ -1121,40 +1109,123 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
 }
 
 @Composable
-fun RotatingShapeContainer(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "shapeRotation")
-    val rotation by infiniteTransition.animateFloat(
+fun BeatWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "beatwaveSonic")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+    val ringRotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(20000, easing = LinearEasing),
+            animation = tween(28000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "rotation"
+        label = "ringRotation"
     )
 
     val primaryColor = MaterialTheme.colorScheme.primary
-    val backgroundColor = MaterialTheme.colorScheme.background
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
 
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            painter = painterResource(id = com.beatwave.music.R.drawable.ic_ten_sided_cookie),
-            contentDescription = null,
-            tint = primaryColor,
+        // Sonic Wave Rings
+        androidx.compose.foundation.Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .rotate(rotation)
-        )
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                    rotationZ = ringRotation
+                }
+        ) {
+            val maxRadius = size.minDimension / 2f
 
-        Icon(
-            painter = painterResource(com.beatwave.music.R.mipmap.ic_launcher_monochrome),
-            contentDescription = null,
-            modifier = Modifier.size(220.dp),
-            tint = backgroundColor
-        )
+            drawCircle(
+                color = primaryColor.copy(alpha = 0.18f),
+                radius = maxRadius * 0.95f,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = 2.dp.toPx(),
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(12f, 16f))
+                )
+            )
+
+            drawCircle(
+                color = secondaryColor.copy(alpha = 0.28f),
+                radius = maxRadius * 0.78f,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = 2.5f.dp.toPx(),
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(24f, 20f))
+                )
+            )
+
+            drawCircle(
+                color = tertiaryColor.copy(alpha = 0.35f),
+                radius = maxRadius * 0.60f,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
+            )
+        }
+
+        // Animated soundwave bars
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.size(140.dp, 80.dp)
+        ) {
+            val barCount = 9
+            for (i in 0 until barCount) {
+                val delayMs = (i * 120) % 800
+                val barAnim by infiniteTransition.animateFloat(
+                    initialValue = 0.25f,
+                    targetValue = 1.0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(
+                            durationMillis = 600 + (i % 3) * 200,
+                            delayMillis = delayMs,
+                            easing = FastOutSlowInEasing
+                        ),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "bar$i"
+                )
+                val barHeight = (18 + barAnim * 48).dp
+                val barColor = if (i % 2 == 0) primaryColor else secondaryColor
+                Box(
+                    modifier = Modifier
+                        .width(7.dp)
+                        .height(barHeight)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(barColor)
+                )
+            }
+        }
+
+        // Center circular BeatWave emblem
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            border = androidx.compose.foundation.BorderStroke(2.dp, primaryColor.copy(alpha = 0.8f)),
+            shadowElevation = 8.dp,
+            modifier = Modifier.size(72.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(com.beatwave.music.R.drawable.equalizer),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+        }
     }
 }
 

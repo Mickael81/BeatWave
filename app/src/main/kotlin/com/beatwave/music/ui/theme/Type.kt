@@ -42,6 +42,35 @@ val PlusJakartaSansFontFamily = FontFamily(
     Font(resId = R.font.plus_jakarta_sans, weight = FontWeight.Bold)
 )
 
+val ChillaxFontFamily = FontFamily(
+    Font(resId = R.font.chillax_regular, weight = FontWeight.Normal),
+    Font(resId = R.font.chillax_medium, weight = FontWeight.Medium),
+    Font(resId = R.font.chillax_semibold, weight = FontWeight.SemiBold),
+    Font(resId = R.font.chillax_bold, weight = FontWeight.Bold),
+    Font(resId = R.font.chillax_light, weight = FontWeight.Light)
+)
+
+val BbhBartleFontFamily = FontFamily(
+    Font(resId = R.font.bbh_bartle_regular, weight = FontWeight.Normal),
+    Font(resId = R.font.bbh_bartle_regular, weight = FontWeight.Bold)
+)
+
+val MonospaceFontFamily = FontFamily.Monospace
+
+val SerifFontFamily = FontFamily.Serif
+
+val CursiveFontFamily = FontFamily.Cursive
+
+val CondensedFontFamily = FontFamily(android.graphics.Typeface.create("sans-serif-condensed", android.graphics.Typeface.NORMAL))
+
+val CasualFontFamily = FontFamily(android.graphics.Typeface.create("casual", android.graphics.Typeface.NORMAL))
+
+val SerifMonospaceFontFamily = FontFamily(android.graphics.Typeface.create("serif-monospace", android.graphics.Typeface.NORMAL))
+
+val PunchySansFontFamily = FontFamily(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL))
+
+val HeavyBlackFontFamily = FontFamily(android.graphics.Typeface.create("sans-serif-black", android.graphics.Typeface.NORMAL))
+
 /**
  * Shared text metrics for every role below.
  *
