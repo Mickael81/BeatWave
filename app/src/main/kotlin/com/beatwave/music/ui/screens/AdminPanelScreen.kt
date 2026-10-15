@@ -47,7 +47,7 @@ fun AdminPanelScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Publish Update", "Publish News", "Test Wrapped", "Suggestions", "Bug Reports", "Mashup Studio")
+    val tabs = listOf("Publish Update", "Publish News", "Test Wrapped", "Suggestions", "Bug Reports")
 
     Scaffold(
         topBar = {
@@ -88,8 +88,7 @@ fun AdminPanelScreen(
                     1 -> PublishNewsTab(navController, playerBottomPadding)
                     2 -> TestWrappedTab(navController, playerBottomPadding)
                     3 -> SuggestionsTab(playerBottomPadding)
-                    4 -> BugReportsTab(playerBottomPadding)
-                    else -> MashupStudioTab(playerBottomPadding)
+                    else -> BugReportsTab(playerBottomPadding)
                 }
             }
         }
@@ -1115,169 +1114,5 @@ fun TestWrappedTab(navController: NavController, bottomPadding: androidx.compose
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun MashupStudioTab(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
-    val context = LocalContext.current
-    var isMashupEnabled by remember { mutableStateOf(true) }
-    var mixGranularity by remember { mutableStateOf("Line-by-Line (Dynamic)") }
-    var maxTracks by remember { mutableStateOf(4) }
-    var stemMode by remember { mutableStateOf("Vocal Swap Over Synced Beat") }
-    var keyMatchTolerance by remember { mutableStateOf("Harmonic Key (Camelot ±1)") }
-    var isSimulating by remember { mutableStateOf(false) }
-    var simulatedCurrentTrack by remember { mutableStateOf("Track A - Line 1: 'Shape of You'") }
-    var simulationBeatBpm by remember { mutableStateOf(124) }
-
-    val coroutineScope = rememberCoroutineScope()
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp + bottomPadding),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "🎛️ Dynamic Mashup Mode — AI DJ Lab",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = "Real-time AI mixing and synchronization engine that weaves 3 to 5 tracks line-by-line or verse-by-verse over an unbroken, synchronized beat and harmonic key.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
-                )
-            }
-        }
-
-        // Toggle engine
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Dynamic Mashup Engine (Beta)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Text("Multi-track real-time beat matching & phrase alignment", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Switch(checked = isMashupEnabled, onCheckedChange = { isMashupEnabled = it })
-                }
-            }
-        }
-
-        // Configuration Parameters
-        Text("Mashup Granularity & Shuffling", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        val granularities = listOf("Line-by-Line (Dynamic)", "Verse-by-Verse (4-8 Bars)", "Chorus Drop Switch")
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            granularities.forEach { option ->
-                FilterChip(
-                    selected = mixGranularity == option,
-                    onClick = { mixGranularity = option },
-                    label = { Text(option) }
-                )
-            }
-        }
-
-        Text("Max Concurrently Synced Tracks ($maxTracks tracks)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        Slider(
-            value = maxTracks.toFloat(),
-            onValueChange = { maxTracks = it.toInt() },
-            valueRange = 3f..5f,
-            steps = 1
-        )
-
-        Text("Audio Stem Isolation Mode", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        val stemModes = listOf("Vocal Swap Over Synced Beat", "Full Track (BPM Snapped)", "Dual Stem (Vocals + Bass)")
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            stemModes.forEach { mode ->
-                FilterChip(
-                    selected = stemMode == mode,
-                    onClick = { stemMode = mode },
-                    label = { Text(mode) }
-                )
-            }
-        }
-
-        Text("Harmonic Key Compatibility", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        val keyModes = listOf("Harmonic Key (Camelot ±1)", "Exact Key Match", "Auto Pitch-Shift (±2 semitones)")
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            keyModes.forEach { keyOpt ->
-                FilterChip(
-                    selected = keyMatchTolerance == keyOpt,
-                    onClick = { keyMatchTolerance = keyOpt },
-                    label = { Text(keyOpt) }
-                )
-            }
-        }
-
-        // Live Simulation Card
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "⚡ Real-time Dynamic Mashup Simulator",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "Simulating: 3 Tracks @ $simulationBeatBpm BPM (Continuous Master Beat Grid)",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                if (isSimulating) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    Text(
-                        text = "▶ Currently Playing: $simulatedCurrentTrack",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                    Text(
-                        text = "Beat Grid: Synchronized ($simulationBeatBpm BPM) • Buffer: 12ms (Seamless Cross-fade)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        if (!isSimulating) {
-                            isSimulating = true
-                            coroutineScope.launch {
-                                simulatedCurrentTrack = "Track A - Line 1: 'The club isn't the best place to find a lover...'"
-                                kotlinx.coroutines.delay(2200)
-                                simulatedCurrentTrack = "Track B - Line 2: 'So the bar is where I go... Me and my friends at the table doing shots...'"
-                                kotlinx.coroutines.delay(2400)
-                                simulatedCurrentTrack = "Track C - Line 3: 'Drinking fast and then we talk slow... You come over and start up a conversation...'"
-                                kotlinx.coroutines.delay(2400)
-                                simulatedCurrentTrack = "Seamless Beat Drop: Synchronized Outro ➔ Track A Hook"
-                                kotlinx.coroutines.delay(2000)
-                                isSimulating = false
-                            }
-                        }
-                    },
-                    enabled = !isSimulating,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (isSimulating) "Mixing Tracks in Real-Time..." else "▶ Run Live Mashup Simulation")
-                }
-            }
-        }
-    }
-}
 
 

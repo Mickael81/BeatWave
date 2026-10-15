@@ -95,6 +95,7 @@ import com.beatwave.music.listentogether.MIN_ROOM_CODE_LENGTH
 import com.beatwave.music.models.MediaMetadata
 import com.beatwave.music.playback.ExoDownloadService
 import com.beatwave.music.ui.component.BottomSheetState
+import com.beatwave.music.ui.component.DynamicMashupDialog
 import com.beatwave.music.ui.component.ListDialog
 import com.beatwave.music.ui.component.Material3MenuGroup
 import com.beatwave.music.ui.component.Material3MenuItemData
@@ -241,6 +242,17 @@ fun PlayerMenu(
     if (showPitchTempoDialog) {
         TempoPitchDialog(
             onDismiss = { showPitchTempoDialog = false },
+        )
+    }
+
+    var showDynamicMashupDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showDynamicMashupDialog) {
+        DynamicMashupDialog(
+            initialSong = mediaMetadata,
+            onDismiss = { showDynamicMashupDialog = false }
         )
     }
 
@@ -761,6 +773,22 @@ fun PlayerMenu(
                                 },
                                 onClick = {
                                     showPitchTempoDialog = true
+                                }
+                            )
+                        )
+                        add(
+                            Material3MenuItemData(
+                                title = { Text(text = "Dynamic Mashup Mode") },
+                                description = { Text(text = "Mix with up to 4 tracks line-by-line in real time") },
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.equalizer),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                },
+                                onClick = {
+                                    showDynamicMashupDialog = true
                                 }
                             )
                         )
