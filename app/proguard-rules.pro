@@ -184,3 +184,8 @@
 -keepclasseswithmembers class com.beatwave.music.listentogether.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+## Compose Font Variation & Typography
+-keep class androidx.compose.ui.text.font.FontVariation** { *; }
+-keepclassmembers class androidx.compose.ui.text.font.FontVariation** { *; }
+

@@ -37,14 +37,14 @@ object SpotifyMapper {
 
     fun getPlaylistThumbnail(playlist: SpotifyPlaylist): String? {
         return playlist.images.let { images ->
-            images.firstOrNull { it.width in 200..400 }?.url
+            images.maxByOrNull { it.width ?: 0 }?.url
                 ?: images.firstOrNull()?.url
         }
     }
 
     fun getTrackThumbnail(track: SpotifyTrack): String? {
         return track.album?.images?.let { images ->
-            images.firstOrNull { it.width in 200..400 }?.url
+            images.maxByOrNull { it.width ?: 0 }?.url
                 ?: images.firstOrNull()?.url
         }
     }

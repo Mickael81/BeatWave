@@ -703,7 +703,8 @@ class HomeViewModel @Inject constructor(
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false) || context.dataStore.get(DataSaverEnabledKey, false)
         val recEngine = context.dataStore.get(RecommendationEngineKey, RecommendationEngine.SPOTIFY.name)
 
-        val items = java.util.Collections.synchronizedList(mutableListOf<YTItem>())
+        val items = java.util.concurrent.CopyOnWriteArrayList<YTItem>()
+        val seenIds = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
 
         if (recEngine == RecommendationEngine.SPOTIFY.name) {
             val query = "${song.song.title} ${song.artists.firstOrNull()?.name.orEmpty()}"
@@ -719,7 +720,7 @@ class HomeViewModel @Inject constructor(
                             val searchResult = YouTube.search(trackQuery, YouTube.SearchFilter.FILTER_SONG).getOrNull()
                             val ytItem = searchResult?.items?.firstOrNull() as? SongItem
                             if (ytItem != null && (!hideVideoSongs || !ytItem.isVideoSong) && !ytItem.explicit) {
-                                if (items.none { it.id == ytItem.id }) {
+                                if (seenIds.add(ytItem.id)) {
                                     items.add(ytItem)
                                 }
                             }
@@ -738,7 +739,11 @@ class HomeViewModel @Inject constructor(
                         .distinctBy { it.id }
                         .filterExplicit(hideExplicit)
                         .filterVideoSongs(hideVideoSongs)
-                    items.addAll(recs)
+                    for (rec in recs) {
+                        if (seenIds.add(rec.id)) {
+                            items.add(rec)
+                        }
+                    }
                 }
             }
         }

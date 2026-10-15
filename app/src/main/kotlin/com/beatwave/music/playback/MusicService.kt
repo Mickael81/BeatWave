@@ -1053,6 +1053,9 @@ class MusicService :
                 crossfadeEnabled = enabled
                 crossfadeDuration = duration * 1000f // Convert to ms
                 crossfadeGapless = gapless
+                if (player.playbackState == Player.STATE_READY) {
+                    scheduleCrossfade()
+                }
             }
 
         combine(

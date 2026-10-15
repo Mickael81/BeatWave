@@ -223,12 +223,7 @@ val GoogleSansFlex = FontFamily(
     Font(
         resId = com.beatwave.music.R.font.google_sans_flex,
         weight = FontWeight.Normal,
-        style = FontStyle.Normal,
-        variationSettings = FontVariation.Settings(
-            FontVariation.weight(400),
-            FontVariation.width(100f),
-            FontVariation.Setting("ROND", 100f)
-        )
+        style = FontStyle.Normal
     )
 )
 
@@ -250,13 +245,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
     val customWelcomeFontFamily = FontFamily(
         Font(
             resId = com.beatwave.music.R.font.sans_flex,
-            variationSettings = FontVariation.Settings(
-                FontVariation.slant(-9f),
-                FontVariation.width(111f),
-                FontVariation.weight(333),
-                FontVariation.Setting("GRAD", 100f),
-                FontVariation.Setting("ROND", 100f)
-            )
+            weight = FontWeight.Light
         )
     )
 

@@ -585,13 +585,20 @@ fun NavBarSearchInputBar(
             .clip(pillShape)
             .then(
                 if (useGlass) {
-                    Modifier.liquidGlass(
-                        config = glassConfig.copy(surfaceOpacity = 0.12f),
-                        shape = pillShape,
-                        highlightAlpha = 0.3f,
-                    )
+                    Modifier
+                        .background(
+                            if (pureBlack) Color(0xFF1C1C1E).copy(alpha = 0.85f)
+                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+                        )
+                        .liquidGlass(
+                            config = glassConfig.copy(surfaceOpacity = 0.25f),
+                            shape = pillShape,
+                            highlightAlpha = 0.3f,
+                        )
                 } else {
-                    Modifier.background(onTint.copy(alpha = 0.15f))
+                    Modifier.background(
+                        if (pureBlack) Color(0xFF1C1C1E) else MaterialTheme.colorScheme.surfaceVariant
+                    )
                 }
             )
             .then(pillGlow.gestureModifier)

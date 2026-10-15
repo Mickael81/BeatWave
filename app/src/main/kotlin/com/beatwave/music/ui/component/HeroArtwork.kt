@@ -215,9 +215,8 @@ fun rememberHeroTint(url: String?): Color {
     // user's own theme colour now, so a miss degrades to their accent, not to black.
     val fallbackTint = LocalAccentColor.current.asDeepTint()
 
-    // Black until the artwork color is extracted (no accent flash); seeded from the
-    // cache so a revisited image shows its tint at once.
-    var tint by remember(url) { mutableStateOf(url?.let { heroTintCache.get(it) } ?: Color.Black) }
+    // Seed from the fallback tint (or cache if available) so new screens never flash pitch black
+    var tint by remember(url) { mutableStateOf(url?.let { heroTintCache.get(it) } ?: fallbackTint) }
 
     LaunchedEffect(url) {
         // No early return on a cache hit. Extraction can already be in flight from
