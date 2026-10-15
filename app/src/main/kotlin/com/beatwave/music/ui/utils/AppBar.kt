@@ -50,7 +50,11 @@ import com.beatwave.music.LocalPlayerAwareWindowInsets
  */
 @Composable
 fun appTopBarWindowInsets(): WindowInsets {
-    val playerInsets = runCatching { LocalPlayerAwareWindowInsets.current }.getOrNull()
+    val playerInsets = try {
+        LocalPlayerAwareWindowInsets.current
+    } catch (e: Throwable) {
+        null
+    }
     val horizontalInsets = playerInsets?.only(WindowInsetsSides.Horizontal) ?: WindowInsets(0, 0, 0, 0)
     return WindowInsets.systemBars.only(WindowInsetsSides.Top)
         .add(WindowInsets.displayCutout.only(WindowInsetsSides.Start + WindowInsetsSides.End))
