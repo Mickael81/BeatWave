@@ -226,7 +226,11 @@ class SpotifyImportViewModel @Inject constructor(
             try {
                 ensureAuthenticated()
                 val meResult = Spotify.me().getOrThrow()
-                val likedSongsResult = Spotify.likedSongs(limit = 1, offset = 0).getOrThrow()
+                val likedSongsResult = runCatching {
+                    spotifyCallWithTokenRetry {
+                        Spotify.likedSongs(limit = 1, offset = 0).getOrThrow()
+                    }
+                }.getOrNull()
 
                 val playlistsList = mutableListOf<SpotifyPlaylist>()
                 var offset = 0
@@ -244,7 +248,7 @@ class SpotifyImportViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         playlists = playlistsList,
-                        likedSongsCount = likedSongsResult.total,
+                        likedSongsCount = likedSongsResult?.total ?: 0,
                         isLoading = false,
                         accountName = meResult.displayName.orEmpty(),
                         accountAvatarUrl = meResult.images.firstOrNull()?.url
@@ -494,6 +498,16 @@ class SpotifyImportViewModel @Inject constructor(
 
                         matchedMedia.forEach { metadata ->
                             insert(metadata)
+                            if (importData.localPlaylistId == "SPOTIFY_LIKED_SONGS") {
+                                val dbSong = song(metadata.id).first()
+                                if (dbSong != null) {
+                                    update(dbSong.song.copy(
+                                        liked = true,
+                                        likedDate = dbSong.song.likedDate ?: now,
+                                        inLibrary = dbSong.song.inLibrary ?: now
+                                    ))
+                                }
+                            }
                         }
 
                         clearPlaylist(importData.localPlaylistId)

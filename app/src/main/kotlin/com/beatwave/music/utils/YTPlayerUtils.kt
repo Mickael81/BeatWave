@@ -192,6 +192,13 @@ object YTPlayerUtils {
         /** True when the stream is sourced from an 8spine module. */
         val isSpineStream: Boolean = false,
     )
+
+    private data class CachedPlayback(
+        val data: PlaybackData,
+        val expiresAt: Long,
+    )
+    private val playbackDataCache = android.util.LruCache<String, CachedPlayback>(50)
+
     /**
      * Custom player response intended to use for playback.
      * Stream URLs come from [MAIN_CLIENT] or [STREAM_FALLBACK_CLIENTS] for fast loading.
@@ -211,6 +218,14 @@ object YTPlayerUtils {
          *  entirely and resolves the plain YouTube stream for this call only. */
         forceStandardAudio: Boolean = false,
     ): Result<PlaybackData> {
+        val cacheKey = "${videoId}_${audioQuality.name}_${forceStandardAudio}_${allowLossless}"
+        synchronized(playbackDataCache) {
+            val cached = playbackDataCache.get(cacheKey)
+            if (cached != null && cached.expiresAt > System.currentTimeMillis() + 60_000L) {
+                Timber.tag(TAG).d("Fast stream cache hit for $videoId")
+                return Result.success(cached.data)
+            }
+        }
         // ── JioSaavn intercept ───────────────────────────────────────────────
         // If the user has enabled JioSaavn streaming, try to resolve the stream
         // URL from JioSaavn first. We fall through to YouTube on ANY failure so
@@ -856,11 +871,23 @@ object YTPlayerUtils {
             PlaybackLogManager.log(PlaybackLogLevel.BOT, "Playback failed for $label", "Triggering bot detection mitigation (rotating guest session)")
             BotDetectionMitigator.rotateGuestSession()
             val retryResult = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager)
-            retryResult.onSuccess { BotDetectionMitigator.notifyPlaybackSuccess() }
+            retryResult.onSuccess { data ->
+                BotDetectionMitigator.notifyPlaybackSuccess()
+                val expiresAt = System.currentTimeMillis() + ((data.streamExpiresInSeconds.takeIf { it > 0 } ?: DEFAULT_STREAM_EXPIRY_SECONDS) * 1000L)
+                synchronized(playbackDataCache) {
+                    playbackDataCache.put(cacheKey, CachedPlayback(data, expiresAt))
+                }
+            }
             return retryResult
         }
 
-        firstAttempt.onSuccess { BotDetectionMitigator.notifyPlaybackSuccess() }
+        firstAttempt.onSuccess { data ->
+            BotDetectionMitigator.notifyPlaybackSuccess()
+            val expiresAt = System.currentTimeMillis() + ((data.streamExpiresInSeconds.takeIf { it > 0 } ?: DEFAULT_STREAM_EXPIRY_SECONDS) * 1000L)
+            synchronized(playbackDataCache) {
+                playbackDataCache.put(cacheKey, CachedPlayback(data, expiresAt))
+            }
+        }
         return firstAttempt
     }
 

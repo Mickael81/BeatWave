@@ -100,12 +100,17 @@ fun SettingsScreen(
             confirmButton = {
                 androidx.compose.material3.TextButton(
                     onClick = {
-                        if (passwordInput == BuildConfig.ADMIN_PASSWORD) {
+                        if (BuildConfig.ADMIN_PASSWORD.isNotBlank() && passwordInput == BuildConfig.ADMIN_PASSWORD) {
                             showAdminPasswordDialog = false
                             passwordInput = ""
                             navController.navigate("admin_panel")
                         } else {
-                            android.widget.Toast.makeText(context, "Incorrect password", android.widget.Toast.LENGTH_SHORT).show()
+                            val message = if (BuildConfig.ADMIN_PASSWORD.isBlank()) {
+                                "Admin panel is disabled (no password configured at build time)"
+                            } else {
+                                "Incorrect password"
+                            }
+                            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
                         }
                     }
                 ) {

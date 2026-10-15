@@ -1401,12 +1401,37 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(globalAccent)
+                                )
+                                Text(
+                                    text = when {
+                                        localOnly -> "OFFLINE MODE"
+                                        currentHour in 5..11 -> "MORNING TUNES"
+                                        currentHour in 12..16 -> "AFTERNOON MIX"
+                                        currentHour in 17..21 -> "EVENING CHILL"
+                                        else -> "NIGHT RHYTHM"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 0.08.em,
+                                    color = globalAccent,
+                                )
+                            }
+                            Spacer(Modifier.height(3.dp))
                             Text(
                                 text = greetingTitle,
                                 fontSize = AppleTokens.TitleLarge,
                                 lineHeight = AppleTokens.TitleLargeLineHeight,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = (-0.02).em,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = (-0.03).em,
                                 color = LocalContentColor.current,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,

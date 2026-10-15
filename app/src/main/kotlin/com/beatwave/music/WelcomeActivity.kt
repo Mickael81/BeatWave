@@ -47,9 +47,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.CircularProgressIndicator
+import com.beatwave.music.utils.SpotifyLikedSongsImporter
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -197,16 +203,20 @@ class WelcomeActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    WelcomePagerScreen(onFinished = {
-                        lifecycleScope.launch {
-                            dataStore.edit { it[IsFirstRunKey] = false }
-                            if (forceShow) {
-                                finish()
-                            } else {
-                                finishOnboarding()
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        LocalPlayerAwareWindowInsets provides androidx.compose.foundation.layout.WindowInsets.systemBars
+                    ) {
+                        WelcomePagerScreen(onFinished = {
+                            lifecycleScope.launch {
+                                dataStore.edit { it[IsFirstRunKey] = false }
+                                if (forceShow) {
+                                    finish()
+                                } else {
+                                    finishOnboarding()
+                                }
                             }
-                        }
-                    })
+                        })
+                    }
                 }
             }
         }
@@ -281,6 +291,9 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
     var isSpotifyConnected by remember {
         mutableStateOf(context.dataStore.get(SpotifySessionKey, "").isNotBlank())
     }
+    var isImportingSpotifyLiked by remember { mutableStateOf(false) }
+    var spotifyLikedImportDone by remember { mutableStateOf(false) }
+    var importedSpotifyLikedCount by remember { mutableStateOf(0) }
 
     var isLastPageScrolledToEnd by remember { mutableStateOf(true) }
 
@@ -559,7 +572,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                             .verticalScroll(rememberScrollState())
                     ) {
                         PermissionCard(
-                            icon = rememberVectorPainter(Icons.Rounded.MusicNote),
+                            icon = painterResource(com.beatwave.music.R.drawable.music_note),
                             iconColor = if (isYtConnected) Color(0xFF80da88) else Color(0xFFffb4ab),
                             iconTint = if (isYtConnected) Color(0xFF00522c) else Color(0xFF93000a),
                             title = "YouTube Music",
@@ -612,7 +625,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                             iconTint = if (isSpotifyConnected) Color(0xFF00522c) else Color(0xFF005448),
                             title = "Spotify",
                             description = if (isSpotifyConnected) "Connected! Playlists, liked tracks & algorithm active." else "Import playlists, liked tracks & Spotify recommendation engine.",
-                            shape = bottomCardShape,
+                            shape = if (isSpotifyConnected) middleCardShape else bottomCardShape,
                             control = {
                                 if (isSpotifyConnected) {
                                     Surface(
@@ -651,6 +664,79 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                                 showSpotifyLogin = true
                             }
                         )
+
+                        if (isSpotifyConnected) {
+                            Spacer(modifier = Modifier.height(2.dp))
+
+                            PermissionCard(
+                                icon = painterResource(com.beatwave.music.R.drawable.favorite),
+                                iconColor = if (spotifyLikedImportDone) Color(0xFF80da88) else Color(0xFFffaee4),
+                                iconTint = if (spotifyLikedImportDone) Color(0xFF00522c) else Color(0xFF8d0053),
+                                title = "Import Spotify Liked Songs",
+                                description = when {
+                                    isImportingSpotifyLiked -> "Importing Spotify Liked Songs... ($importedSpotifyLikedCount)"
+                                    spotifyLikedImportDone -> "Imported $importedSpotifyLikedCount liked songs into BeatWave library!"
+                                    else -> "Sync your Spotify Liked Songs directly into your local library."
+                                },
+                                shape = bottomCardShape,
+                                control = {
+                                    if (spotifyLikedImportDone) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = Color(0xFF80da88).copy(alpha = 0.2f),
+                                            modifier = Modifier.padding(end = 4.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Check,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFF00522c),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = "Imported",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFF00522c)
+                                                )
+                                            }
+                                        }
+                                    } else if (isImportingSpotifyLiked) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            strokeWidth = 2.dp,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Rounded.CloudDownload,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    if (!isImportingSpotifyLiked && !spotifyLikedImportDone) {
+                                        isImportingSpotifyLiked = true
+                                        scope.launch {
+                                            val result = SpotifyLikedSongsImporter.importLikedSongs(
+                                                context = context,
+                                                onProgress = { done, _ -> importedSpotifyLikedCount = done }
+                                            )
+                                            isImportingSpotifyLiked = false
+                                            result.onSuccess { count ->
+                                                importedSpotifyLikedCount = count
+                                                spotifyLikedImportDone = true
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(100.dp))
                     }
@@ -1481,7 +1567,7 @@ fun WelcomeYouTubeLoginDialog(
                                 )
                             }
                         },
-                        windowInsets = appTopBarWindowInsets()
+                        windowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
                     )
                     if (isLoading || pageProgress in 1..99) {
                         LinearProgressIndicator(
@@ -1631,7 +1717,7 @@ fun WelcomeSpotifyLoginDialog(
                                 )
                             }
                         },
-                        windowInsets = appTopBarWindowInsets()
+                        windowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
                     )
                     if (isLoading || pageProgress in 1..99) {
                         LinearProgressIndicator(

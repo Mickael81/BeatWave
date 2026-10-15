@@ -41,9 +41,7 @@ fun SpotifyPlaylistBottomSheet(
 
     val displayItems = remember(state.likedSongsCount, state.playlists) {
         val list = mutableListOf<Any>()
-        if (state.likedSongsCount > 0) {
-            list.add("liked_songs")
-        }
+        list.add("liked_songs")
         list.addAll(state.playlists)
         list
     }

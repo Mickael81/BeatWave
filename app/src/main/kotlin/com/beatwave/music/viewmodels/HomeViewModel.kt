@@ -330,7 +330,7 @@ class HomeViewModel @Inject constructor(
         val candidateSeeds: List<Song> = (likedSongs + recentSongs + mostPlayed + allLocal).distinctBy { it.id }
 
         val seeds: List<Song> = if (candidateSeeds.isNotEmpty()) {
-            candidateSeeds.shuffled().take(5)
+            candidateSeeds.shuffled().take(3)
         } else emptyList()
 
         val items = java.util.Collections.synchronizedList(mutableListOf<DailyDiscoverItem>())
@@ -349,7 +349,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
 
-            val spotifyRecs = com.music.spotify.Spotify.getRecommendations(spotifySeedIds.toList(), limit = 35).getOrNull()
+            val spotifyRecs = com.music.spotify.Spotify.getRecommendations(spotifySeedIds.toList(), limit = 15).getOrNull()
             if (!spotifyRecs.isNullOrEmpty()) {
                 val defaultSeed = seeds.firstOrNull() ?: Song(
                     song = com.beatwave.music.db.entities.SongEntity(id = "seed", title = "Spotify Discovery", duration = 0),
@@ -358,7 +358,7 @@ class HomeViewModel @Inject constructor(
 
                 // Suggest direct playable songs from Spotify recommendations
                 kotlinx.coroutines.coroutineScope {
-                    spotifyRecs.take(30).map { spTrack ->
+                    spotifyRecs.take(8).map { spTrack ->
                         launch(Dispatchers.IO) {
                             val query = "${spTrack.name} ${spTrack.artists.firstOrNull()?.name.orEmpty()}"
                             val searchResult = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()
@@ -800,6 +800,8 @@ class HomeViewModel @Inject constructor(
                 homePage.value?.sections?.flatMap { it.items }.orEmpty()
     }
 
+    private var lastNetworkLoadTime = 0L
+
     private suspend fun load() {
         isLoading.value = true
 
@@ -815,8 +817,12 @@ class HomeViewModel @Inject constructor(
         loadLocalDataPhase()
         isLoading.value = false
 
-        // Phase 2: All network sections in parallel — streams in progressively
-        loadNetworkDataPhase()
+        // Phase 2: Stream network data if cache is stale or empty
+        val isCacheStale = (System.currentTimeMillis() - lastNetworkLoadTime) > 10 * 60 * 1000L
+        if (isRefreshing.value || homePage.value == null || isCacheStale) {
+            loadNetworkDataPhase()
+            lastNetworkLoadTime = System.currentTimeMillis()
+        }
     }
 
     /** Pull-to-refresh in local-only mode rescans the device instead of the network. */

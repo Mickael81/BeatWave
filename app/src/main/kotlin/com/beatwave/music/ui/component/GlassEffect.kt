@@ -226,7 +226,12 @@ fun isGlassSupported(sdkInt: Int = Build.VERSION.SDK_INT): Boolean = sdkInt >= B
 fun isLowRamDevice(): Boolean {
     val context = LocalContext.current
     return remember {
-        context.getSystemService(ActivityManager::class.java)?.isLowRamDevice ?: false
+        val am = context.getSystemService(ActivityManager::class.java)
+        if (am?.isLowRamDevice == true) return@remember true
+        val memInfo = ActivityManager.MemoryInfo()
+        am?.getMemoryInfo(memInfo)
+        val totalRamGb = memInfo.totalMem / (1024.0 * 1024.0 * 1024.0)
+        totalRamGb < 3.5 || Runtime.getRuntime().availableProcessors() <= 4
     }
 }
 
@@ -358,7 +363,22 @@ fun Modifier.liquidGlass(
     // looping video pick this up without every call site naming it explicitly.
     loopBucket: (() -> Int)? = LocalBackdropLoopBucket.current,
 ): Modifier {
-    if (!isGlassAllowed()) return this
+    val surfaceTintColor = if (config.surfaceTintColor.isSpecified) {
+        config.surfaceTintColor
+    } else if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
+        Color(0xFFFAFAFA)
+    } else {
+        Color(0xFF4A4A4E)
+    }
+
+    // Translucent style or unsupported/low-RAM devices short-circuit everything below:
+    // no backdrop is sampled and no expensive RenderEffect runs, keeping rendering fast and buttery smooth.
+    if (!isGlassAllowed() || shouldUseTranslucentGlassFallback(config.style, isRenderEffectSupported())) {
+        return this
+            .clip(shape)
+            .background(surfaceTintColor.copy(alpha = config.surfaceOpacity.coerceIn(0f, 1f)))
+    }
+
     val backdrop = LocalAppBackdrop.current
     val density = LocalDensity.current
     val resolutionScale = backdropScale.coerceIn(0.05f, 1f)
@@ -369,38 +389,6 @@ fun Modifier.liquidGlass(
     val saturation = glassSaturation(config.vibrancy)
     val lensHeightPx = with(density) { (config.lensHeight * LENS_MAX_DP).dp.toPx() } * resolutionScale
     val lensAmountPx = with(density) { (config.lensAmount * LENS_MAX_DP).dp.toPx() } * resolutionScale
-    // Apple's Liquid Glass is a bright, reflective material: even in dark mode it
-    // reads as a distinctly lighter "frosted" surface, not a near-black rectangle
-    // that blends into an OLED-black background. Honor an explicit user color,
-    // otherwise use a proper adaptive glass gray rather than matching the theme
-    // surface color 1:1 (which made the bar invisible over pure-black content).
-    val surfaceTintColor = if (config.surfaceTintColor.isSpecified) {
-        config.surfaceTintColor
-    } else if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
-        Color(0xFFFAFAFA)
-    } else {
-        Color(0xFF4A4A4E)
-    }
-
-    // Translucent style short-circuits everything below: no backdrop is sampled and
-    // no RenderEffect runs, so there is nothing to configure. Content behind shows
-    // through the tint directly, which is the point — the alternative when glass is
-    // off is an opaque fill, and that reads as a black blob sitting on the content.
-    //
-    // Also taken when the platform can't do the real blur (below API 31):
-    // this used to fall through to a hardcoded opaque-black surface instead
-    // (reasoning: unblurred sharp content behind a translucent tint "reads as
-    // broken, not glass"), which is exactly the "solid black instead of any
-    // transparency" bug reported on older/low-end devices. This same
-    // translucent-tint path is already the app's own answer to "can't do a
-    // real blur, need something cheap that still respects the user's tint
-    // and opacity settings" — so route the unsupported case here too instead
-    // of a separate hardcoded fallback.
-    if (shouldUseTranslucentGlassFallback(config.style, isRenderEffectSupported())) {
-        return this
-            .clip(shape)
-            .background(surfaceTintColor.copy(alpha = config.surfaceOpacity.coerceIn(0f, 1f)))
-    }
 
     // ponytail: frozen mid-sweep. The drift described at [HighlightAngleMin] was a
     // rememberInfiniteTransition, and because glass surfaces (the nav bar above all)

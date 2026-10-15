@@ -232,6 +232,22 @@ fun SpotifyScreen(
             title = stringResource(R.string.playlists),
             items = listOf(
                 Material3SettingsItem(
+                    title = { Text(stringResource(R.string.spotify_liked_songs)) },
+                    description = {
+                        Text(
+                            if (state.isAuthenticated) {
+                                if (state.likedSongsCount > 0) "${state.likedSongsCount} songs available to import"
+                                else "Import all liked songs from Spotify directly into library"
+                            } else {
+                                stringResource(R.string.spotify_not_connected)
+                            }
+                        )
+                    },
+                    icon = painterResource(R.drawable.favorite),
+                    enabled = state.isAuthenticated && !state.isLoading,
+                    onClick = { viewModel.startImport(listOf("liked_songs")) }
+                ),
+                Material3SettingsItem(
                     title = { Text(stringResource(R.string.spotify_select_sources)) },
                     description = {
                         Text(
@@ -244,7 +260,7 @@ fun SpotifyScreen(
                         )
                     },
                     icon = painterResource(R.drawable.bookmark_star_library),
-                    enabled = state.isAuthenticated && totalPlaylists > 0 && !state.isLoading,
+                    enabled = state.isAuthenticated && !state.isLoading,
                     onClick = { showPlaylistsSheet = true }
                 ),
                 Material3SettingsItem(
@@ -502,7 +518,7 @@ private fun SpotifyLoginDialog(
                                 )
                             }
                         },
-                        windowInsets = appTopBarWindowInsets()
+                        windowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
                     )
                     if (isLoading || pageProgress in 1..99) {
                         LinearProgressIndicator(

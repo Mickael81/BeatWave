@@ -1,4 +1,4 @@
-﻿/**
+/**
  * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
@@ -31,7 +31,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
 @HiltViewModel
 class OnlineSearchSuggestionViewModel
 @Inject
@@ -46,6 +46,7 @@ constructor(
     init {
         viewModelScope.launch {
             query
+                .kotlinx.coroutines.flow.debounce { if (it.isEmpty()) 0L else 250L }
                 .flatMapLatest { query ->
                     if (query.isEmpty()) {
                         database.searchHistory().map { history ->

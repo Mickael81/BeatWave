@@ -88,7 +88,7 @@ android {
         val adminPassword = envProperties.getProperty("ADMIN_PASSWORD")
             ?: localProperties.getProperty("ADMIN_PASSWORD")
             ?: System.getenv("ADMIN_PASSWORD")
-            ?: "beatwave67"
+            ?: ""
         buildConfigField("String", "ADMIN_PASSWORD", "\"$adminPassword\"")
 
 //add nightly build label support
