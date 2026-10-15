@@ -2970,7 +2970,7 @@ class MainActivity : ComponentActivity() {
 val LocalDatabase = staticCompositionLocalOf<MusicDatabase> { error("No database provided") }
 val LocalRingtoneViewModel = staticCompositionLocalOf<com.beatwave.music.ui.screens.settings.RingtoneViewModel> { error("No RingtoneViewModel provided") }
 val LocalPlayerConnection = staticCompositionLocalOf<PlayerConnection?> { error("No PlayerConnection provided") }
-val LocalPlayerAwareWindowInsets = compositionLocalOf<WindowInsets> { error("No WindowInsets provided") }
+val LocalPlayerAwareWindowInsets = compositionLocalOf<WindowInsets> { WindowInsets(0, 0, 0, 0) }
 val LocalDownloadUtil = staticCompositionLocalOf<DownloadUtil> { error("No DownloadUtil provided") }
 val LocalSyncUtils = staticCompositionLocalOf<SyncUtils> { error("No SyncUtils provided") }
 val LocalListenTogetherManager = staticCompositionLocalOf<com.beatwave.music.listentogether.ListenTogetherManager?> { null }

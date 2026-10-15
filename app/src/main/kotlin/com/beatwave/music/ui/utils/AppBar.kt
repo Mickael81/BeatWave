@@ -49,17 +49,10 @@ import com.beatwave.music.LocalPlayerAwareWindowInsets
  * bar — didn't, so this brings it in line.
  */
 @Composable
-fun appTopBarWindowInsets(): WindowInsets {
-    val playerInsets = try {
-        LocalPlayerAwareWindowInsets.current
-    } catch (e: Throwable) {
-        null
-    }
-    val horizontalInsets = playerInsets?.only(WindowInsetsSides.Horizontal) ?: WindowInsets(0, 0, 0, 0)
-    return WindowInsets.systemBars.only(WindowInsetsSides.Top)
+fun appTopBarWindowInsets(): WindowInsets =
+    WindowInsets.systemBars.only(WindowInsetsSides.Top)
         .add(WindowInsets.displayCutout.only(WindowInsetsSides.Start + WindowInsetsSides.End))
-        .add(horizontalInsets)
-}
+        .add(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
 
 /**
  * Height of the floating top chrome, for a list that has no header of its own to sit
