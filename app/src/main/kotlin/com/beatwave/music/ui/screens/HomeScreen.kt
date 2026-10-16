@@ -2112,20 +2112,35 @@ private fun LazyListScope.heroSection(
                     )
                 },
                 onShuffle = {
-                    deps.playerConnection.playQueue(
-                        ListQueue(
-                            title = top.song.title,
-                            items = quickPicks.orEmpty().shuffled().map { it.toMediaItem() },
+                    val quickList = quickPicks.orEmpty().map { it.toMediaItem() }
+                    if (quickList.isNotEmpty()) {
+                        deps.playerConnection.playQueue(
+                            ListQueue(
+                                title = top.song.title,
+                                items = quickList.shuffled(),
+                            )
                         )
-                    )
+                    } else {
+                        deps.playerConnection.playQueue(
+                            YouTubeQueue.radio(top.toMediaMetadata())
+                        )
+                    }
                 },
                 onClick = {
-                    deps.playerConnection.playQueue(
-                        ListQueue(
-                            title = top.song.title,
-                            items = listOf(top.toMediaItem()),
+                    val quickList = quickPicks.orEmpty().map { it.toMediaItem() }
+                    val topItem = top.toMediaItem()
+                    if (quickList.isNotEmpty()) {
+                        deps.playerConnection.playQueue(
+                            ListQueue(
+                                title = top.song.title,
+                                items = listOf(topItem) + quickList.filter { it.mediaId != topItem.mediaId },
+                            )
                         )
-                    )
+                    } else {
+                        deps.playerConnection.playQueue(
+                            YouTubeQueue.radio(top.toMediaMetadata())
+                        )
+                    }
                 },
                 modifier = Modifier
                     .padding(horizontal = AppleTokens.Gutter)

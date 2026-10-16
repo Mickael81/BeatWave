@@ -1,7 +1,15 @@
 {
-  "description": "BeatWave 6.3.0 — major stability and experience release with widespread device crash fixes, crystal-clear high-res album art, seamless crossfade activation, Apple Music-inspired visual polish, and upgraded Admin Panel with Dynamic Mashup Studio.",
+  "description": "BeatWave 6.1.1 — smart shuffle overhaul, intelligent genre/automix radio loading, seamless continuous playback without repeating, and performance optimizations.",
   "image": "",
   "changelog": [
+    {
+      "title": "Smart Shuffle & Infinite Genre Automix",
+      "items": [
+        "Fixed shuffle loop issue where single tracks repeated indefinitely: turning on shuffle now dynamically spins up an automix of similar genre and style tracks.",
+        "Fixed single-track queues by linking YouTube Automix radio (RDAMVM) and related genre tracks automatically across Search, Home, and Suggestions.",
+        "Seamless Autoplay: when reaching the end of a queue with Repeat Off, BeatWave automatically loads more tracks of the same genre so your music never abruptly stops."
+      ]
+    },
     {
       "title": "Device Compatibility & Crash Fixes",
       "items": [
@@ -29,7 +37,7 @@
       "title": "Admin Panel Enhancements & Mashup Studio",
       "items": [
         "Added real-time search filtering and status chips across all User Suggestions and Bug Reports.",
-        "One-tap Admin quick replies for rapid issue triaging ('Fixed in v6.3.0!', 'Investigating now', etc.).",
+        "One-tap Admin quick replies for rapid issue triaging ('Fixed in v6.1.1!', 'Investigating now', etc.).",
         "Added Bug Report deletion support to keep issue queues clean and actionable.",
         "New Mashup Studio (AI DJ Lab): interactive admin console to configure and preview real-time multi-track beat matching, stem isolation, and line-by-line / verse-by-verse transitions."
       ]

@@ -1793,11 +1793,13 @@ class MusicService :
         val currentMediaId = currentMediaMetadata.id
 
         scope.launch(SilentHandler) {
-            // Use simple videoId to let YouTube personalize recommendations
+            // Use RDAMVM playlistId to ensure YouTube loads an automix queue of similar genre tracks
             val radioQueue = YouTubeQueue(
                 endpoint = WatchEndpoint(
-                    videoId = currentMediaId
-                )
+                    videoId = currentMediaId,
+                    playlistId = "RDAMVM$currentMediaId"
+                ),
+                preloadItem = currentMediaMetadata
             )
 
             try {
@@ -1835,7 +1837,7 @@ class MusicService :
                 // Fallback: try with related endpoint
                 try {
                     val nextResult = withContext(Dispatchers.IO) {
-                        YouTube.next(WatchEndpoint(videoId = currentMediaId)).getOrNull()
+                        YouTube.next(WatchEndpoint(videoId = currentMediaId, playlistId = "RDAMVM$currentMediaId")).getOrNull()
                     }
                     nextResult?.relatedEndpoint?.let { relatedEndpoint ->
                         val relatedPage = withContext(Dispatchers.IO) {
@@ -2311,23 +2313,26 @@ class MusicService :
         // Auto load more songs from queue
         if (dataStore.get(AutoLoadMoreKey, true) &&
             reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
-            player.mediaItemCount - player.currentMediaItemIndex <= 5 &&
-            currentQueue.hasNextPage() &&
             !(dataStore.get(DisableLoadMoreWhenRepeatAllKey, false) && player.repeatMode == REPEAT_MODE_ALL)
         ) {
-            scope.launch(SilentHandler) {
-                val mediaItems = withContext(Dispatchers.IO) {
-                    currentQueue.nextPage()
-                        .filterExplicit(dataStore.get(HideExplicitKey, false))
-                        .filterVideoSongs(dataStore.get(HideVideoSongsKey, false) || dataStore.get(DataSaverEnabledKey, false))
-                }
-                if (player.playbackState != STATE_IDLE && mediaItems.isNotEmpty()) {
-                    player.addMediaItems(mediaItems)
-                    if (player.shuffleModeEnabled) {
-                        val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
-                        applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
+            if (player.mediaItemCount - player.currentMediaItemIndex <= 5 && currentQueue.hasNextPage()) {
+                scope.launch(SilentHandler) {
+                    val mediaItems = withContext(Dispatchers.IO) {
+                        currentQueue.nextPage()
+                            .filterExplicit(dataStore.get(HideExplicitKey, false))
+                            .filterVideoSongs(dataStore.get(HideVideoSongsKey, false) || dataStore.get(DataSaverEnabledKey, false))
+                    }
+                    if (player.playbackState != STATE_IDLE && mediaItems.isNotEmpty()) {
+                        player.addMediaItems(mediaItems)
+                        if (player.shuffleModeEnabled) {
+                            val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
+                            applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
+                        }
                     }
                 }
+            } else if (player.mediaItemCount - player.currentMediaItemIndex <= 2 && !currentQueue.hasNextPage()) {
+                // When queue is about to end and has no more pages, seamlessly continue with similar genre songs
+                startRadioSeamlessly()
             }
         }
 
@@ -2351,13 +2356,15 @@ class MusicService :
             }
         }
 
-        // Force Repeat All if the player ignored it and ended playback
+        // Force Repeat All if the player ignored it and ended playback, or auto-continue with similar songs
         if (playbackState == Player.STATE_ENDED) {
             val repeatMode = runBlocking { dataStore.get(RepeatModeKey, REPEAT_MODE_OFF) }
             if (repeatMode == REPEAT_MODE_ALL && player.mediaItemCount > 0) {
                 player.seekTo(0, 0)
                 player.prepare()
                 player.play()
+            } else if (repeatMode == REPEAT_MODE_OFF && dataStore.get(AutoLoadMoreKey, true)) {
+                startRadioSeamlessly()
             }
         }
 
@@ -2489,11 +2496,16 @@ class MusicService :
             // If queue is empty, don't shuffle
             if (player.mediaItemCount == 0) return
 
-            val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
-            val currentIndex = player.currentMediaItemIndex
-            val totalCount = player.mediaItemCount
+            // If queue only has 1 song, fetch similar genre songs so shuffle has a real queue to shuffle through!
+            if (player.mediaItemCount <= 1) {
+                startRadioSeamlessly()
+            } else {
+                val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
+                val currentIndex = player.currentMediaItemIndex
+                val totalCount = player.mediaItemCount
 
-            applyShuffleOrder(currentIndex, totalCount, shufflePlaylistFirst)
+                applyShuffleOrder(currentIndex, totalCount, shufflePlaylistFirst)
+            }
         }
 
         // Save shuffle mode to preferences
@@ -2538,11 +2550,8 @@ class MusicService :
 
         if (shufflePlaylistFirst && originalQueueSize > 0 && originalQueueSize < totalCount) {
             // Shuffle original items and added items separately
-            val originalIndices = (0 until originalQueueSize).filter { it != currentIndex }.toMutableList()
-            val addedIndices = (originalQueueSize until totalCount).filter { it != currentIndex }.toMutableList()
-
-            originalIndices.shuffle()
-            addedIndices.shuffle()
+            val originalIndices = (0 until originalQueueSize).filter { it != currentIndex }.shuffled()
+            val addedIndices = (originalQueueSize until totalCount).filter { it != currentIndex }.shuffled()
 
             val shuffledIndices = IntArray(totalCount)
             var pos = 0
@@ -2557,14 +2566,11 @@ class MusicService :
             }
             player.setShuffleOrder(DefaultShuffleOrder(shuffledIndices, System.currentTimeMillis()))
         } else {
-            val shuffledIndices = IntArray(totalCount) { it }
-            shuffledIndices.shuffle()
-            // Ensure current item is first in the shuffle order
-            val currentItemIndexInShuffled = shuffledIndices.indexOf(currentIndex)
-            if (currentItemIndexInShuffled != -1) { // Should always be true if totalCount > 0
-                val temp = shuffledIndices[0]
-                shuffledIndices[0] = shuffledIndices[currentItemIndexInShuffled]
-                shuffledIndices[currentItemIndexInShuffled] = temp
+            val otherIndices = (0 until totalCount).filter { it != currentIndex }.shuffled()
+            val shuffledIndices = IntArray(totalCount)
+            shuffledIndices[0] = currentIndex
+            for (i in otherIndices.indices) {
+                shuffledIndices[i + 1] = otherIndices[i]
             }
             player.setShuffleOrder(DefaultShuffleOrder(shuffledIndices, System.currentTimeMillis()))
         }

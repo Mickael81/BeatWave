@@ -25,22 +25,45 @@ class YouTubeQueue(
         return withContext(IO) {
             var lastException: Throwable? = null
             
-            // Try with original endpoint first (allows YouTube to personalize recommendations)
+            // If playing a single track without an explicit playlist, attach the automix radio playlist ID
+            // so YouTube automatically generates a personalized queue of similar genre tracks
+            if (endpoint.playlistId == null && endpoint.videoId != null) {
+                endpoint = WatchEndpoint(
+                    videoId = endpoint.videoId,
+                    playlistId = "RDAMVM${endpoint.videoId}"
+                )
+            }
+
             for (attempt in 0..maxRetries) {
                 try {
                     val nextResult = YouTube.next(endpoint, continuation).getOrThrow()
                     endpoint = nextResult.endpoint
                     continuation = nextResult.continuation
                     retryCount = 0
+
+                    val items = nextResult.items.map { it.toMediaItem() }.toMutableList()
+
+                    // If YouTube only returned the single requested song, supplement with related tracks of the same genre
+                    if (items.size <= 1 && nextResult.relatedEndpoint != null) {
+                        try {
+                            val relatedPage = YouTube.related(nextResult.relatedEndpoint).getOrNull()
+                            relatedPage?.songs?.map { it.toMediaItem() }?.let { relatedItems ->
+                                val existingIds = items.map { it.mediaId }.toSet()
+                                items.addAll(relatedItems.filter { it.mediaId !in existingIds })
+                            }
+                        } catch (_: Exception) {
+                            // Non-fatal fallback
+                        }
+                    }
+
                     return@withContext Queue.Status(
                         title = nextResult.title,
-                        items = nextResult.items.map { it.toMediaItem() },
+                        items = items,
                         mediaItemIndex = nextResult.currentIndex ?: 0,
                     )
                 } catch (e: Exception) {
                     lastException = e
-                    // If first attempt fails and we have a videoId, try with fallback radio params
-                    if (attempt == 0 && endpoint.videoId != null && endpoint.playlistId == null) {
+                    if (attempt == 0 && endpoint.videoId != null && endpoint.playlistId != "RDAMVM${endpoint.videoId}") {
                         endpoint = WatchEndpoint(
                             videoId = endpoint.videoId,
                             playlistId = "RDAMVM${endpoint.videoId}"
@@ -80,11 +103,14 @@ class YouTubeQueue(
     companion object {
         /**
          * Creates a radio queue based on a song.
-         * Uses only videoId to let YouTube personalize recommendations based on user's listening history.
+         * Uses RDAMVM playlistId so YouTube generates an infinite automix of songs of the same type and genre.
          */
         fun radio(song: MediaMetadata): YouTubeQueue {
             return YouTubeQueue(
-                WatchEndpoint(videoId = song.id),
+                WatchEndpoint(
+                    videoId = song.id,
+                    playlistId = "RDAMVM${song.id}"
+                ),
                 song
             )
         }
