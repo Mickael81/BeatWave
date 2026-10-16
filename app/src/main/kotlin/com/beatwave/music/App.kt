@@ -75,19 +75,26 @@ class App : Application(), SingletonImageLoader.Factory {
     lateinit var downloadUtilProvider: Provider<com.beatwave.music.playback.DownloadUtil>
 
     private fun isCrashProcess(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            getProcessName().endsWith(":crash")
-        } else {
-            runCatching {
+        return runCatching {
+            val processName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                runCatching { android.app.Application.getProcessName() }.getOrNull()
+            } else {
+                null
+            } ?: runCatching {
                 val pid = android.os.Process.myPid()
                 val am = getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
-                am?.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName?.endsWith(":crash") == true
-            }.getOrDefault(false)
-        }
+                am?.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName
+            }.getOrNull()
+
+            processName?.endsWith(":crash") == true
+        }.getOrDefault(false)
     }
 
     override fun onCreate() {
         super.onCreate()
+
+        // Always install CrashHandler first so any unexpected issue is caught and logged
+        CrashHandler.install(this)
 
         if (isCrashProcess()) {
             if (BuildConfig.DEBUG) {
@@ -97,23 +104,18 @@ class App : Application(), SingletonImageLoader.Factory {
         }
 
         // Restored synchronously, before anything else can start: the async
-        // DataStore collector further down (applicationScope.launch { ... }
-        // .collect { YouTube.cookie = ... }) doesn't land its first value until
-        // some time after onCreate() returns. MusicService can start resolving
-        // playback before that — sees YouTube.cookie == null (its default, not
-        // "genuinely logged out"), takes the guest-session branch in
-        // BotDetectionMitigator, and PERSISTS a freshly-fetched guest
-        // visitorData over the real logged-in session's value in DataStore.
-        // Every cold start was a fresh chance to re-corrupt it.
-        YouTube.cookie = dataStore.get(InnerTubeCookieKey, "").takeIf { it.isNotBlank() && it != "null" }
-        YouTube.visitorData = dataStore.get(VisitorDataKey, "").takeIf { it.isNotBlank() && it != "null" }
-        YouTube.dataSyncId = dataStore.get(DataSyncIdKey, "").takeIf { it.isNotBlank() && it != "null" }
-
-        // Install crash handler first
-        CrashHandler.install(this)
+        // DataStore collector further down doesn't land its first value until
+        // some time after onCreate() returns.
+        runCatching {
+            YouTube.cookie = dataStore.get(InnerTubeCookieKey, "").takeIf { it.isNotBlank() && it != "null" }
+            YouTube.visitorData = dataStore.get(VisitorDataKey, "").takeIf { it.isNotBlank() && it != "null" }
+            YouTube.dataSyncId = dataStore.get(DataSyncIdKey, "").takeIf { it.isNotBlank() && it != "null" }
+        }
 
         // Initialize cipher deobfuscator for WEB_REMIX streaming
-        CipherDeobfuscator.initialize(this)
+        runCatching {
+            CipherDeobfuscator.initialize(this)
+        }
 
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())

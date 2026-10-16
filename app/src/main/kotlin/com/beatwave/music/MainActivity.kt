@@ -2811,12 +2811,23 @@ class MainActivity : ComponentActivity() {
     private fun AppStartupSplashScreen(
         onDismiss: () -> Unit
     ) {
+        val currentOnDismiss by androidx.compose.runtime.rememberUpdatedState(onDismiss)
+        var dismissed by remember { mutableStateOf(false) }
+        val safeDismiss = remember {
+            {
+                if (!dismissed) {
+                    dismissed = true
+                    currentOnDismiss()
+                }
+            }
+        }
+
         var isVisible by remember { mutableStateOf(true) }
         val alphaAnim by animateFloatAsState(
             targetValue = if (isVisible) 1f else 0f,
             animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
             label = "splashAlpha",
-            finishedListener = { if (!isVisible) onDismiss() }
+            finishedListener = { if (!isVisible) safeDismiss() }
         )
 
         val scaleAnim by animateFloatAsState(
@@ -2867,8 +2878,8 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             delay(1200L)
             isVisible = false
-            delay(450L)
-            onDismiss()
+            delay(500L)
+            safeDismiss()
         }
 
         Box(

@@ -1240,6 +1240,17 @@ fun BeatWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
         label = "ringRotation"
     )
 
+    // Single phase animation drives all waveform bars cleanly without composable loop calls
+    val wavePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2 * Math.PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "wavePhase"
+    )
+
     val primaryColor = MaterialTheme.colorScheme.primary
     val secondaryColor = MaterialTheme.colorScheme.secondary
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
@@ -1248,7 +1259,7 @@ fun BeatWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        // Sonic Wave Rings
+        // Sonic Wave Rings - robust stroke without hardware-incompatible dash effects
         androidx.compose.foundation.Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -1263,19 +1274,13 @@ fun BeatWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
             drawCircle(
                 color = primaryColor.copy(alpha = 0.18f),
                 radius = maxRadius * 0.95f,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                    width = 2.dp.toPx(),
-                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(12f, 16f))
-                )
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
             )
 
             drawCircle(
                 color = secondaryColor.copy(alpha = 0.28f),
                 radius = maxRadius * 0.78f,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                    width = 2.5f.dp.toPx(),
-                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(24f, 20f))
-                )
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.5f.dp.toPx())
             )
 
             drawCircle(
@@ -1285,7 +1290,7 @@ fun BeatWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
             )
         }
 
-        // Animated soundwave bars
+        // Animated soundwave bars driven safely from wavePhase
         Row(
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -1293,21 +1298,9 @@ fun BeatWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
         ) {
             val barCount = 9
             for (i in 0 until barCount) {
-                val delayMs = (i * 120) % 800
-                val barAnim by infiniteTransition.animateFloat(
-                    initialValue = 0.25f,
-                    targetValue = 1.0f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(
-                            durationMillis = 600 + (i % 3) * 200,
-                            delayMillis = delayMs,
-                            easing = FastOutSlowInEasing
-                        ),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "bar$i"
-                )
-                val barHeight = (18 + barAnim * 48).dp
+                val factor = kotlin.math.sin(wavePhase + i * 0.7f).toFloat().coerceIn(-1f, 1f)
+                val normalized = (factor + 1f) / 2f
+                val barHeight = (18 + normalized * 48).dp
                 val barColor = if (i % 2 == 0) primaryColor else secondaryColor
                 Box(
                     modifier = Modifier

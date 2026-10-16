@@ -56,7 +56,15 @@ class CrashActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        val crashLog = intent.getStringExtra(CrashHandler.EXTRA_CRASH_LOG) ?: getString(R.string.crash_no_log)
+        val crashLogExtra = intent.getStringExtra(CrashHandler.EXTRA_CRASH_LOG)
+        val crashLog = if (!crashLogExtra.isNullOrBlank() && crashLogExtra != getString(R.string.crash_no_log)) {
+            crashLogExtra
+        } else {
+            runCatching {
+                val file = File(filesDir, "latest_crash.txt")
+                if (file.exists()) file.readText() else null
+            }.getOrNull() ?: getString(R.string.crash_no_log)
+        }
         
         setContent {
             val darkTheme = isSystemInDarkTheme()

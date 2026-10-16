@@ -42,17 +42,29 @@ class CrashHandler private constructor(
         try {
             val crashLog = buildCrashLog(throwable)
             Timber.e(throwable, "App crashed")
-            
-            // Launch crash activity
+
+            // Persist to disk so it is never lost even if Intent extras fail
+            runCatching {
+                val file = java.io.File(applicationContext.filesDir, "latest_crash.txt")
+                file.writeText(crashLog)
+            }
+
+            // Launch crash activity with a size-bounded extra to prevent TransactionTooLargeException
+            val safeExtra = if (crashLog.length > 50000) crashLog.take(50000) + "\n...[truncated]" else crashLog
             val intent = Intent(applicationContext, CrashActivity::class.java).apply {
-                putExtra(EXTRA_CRASH_LOG, crashLog)
+                putExtra(EXTRA_CRASH_LOG, safeExtra)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             }
             applicationContext.startActivity(intent)
-            
+
+            // Allow the ActivityManager binder call to dispatch before terminating the process
+            try {
+                Thread.sleep(300)
+            } catch (_: InterruptedException) {}
+
             // Kill the current process
             android.os.Process.killProcess(android.os.Process.myPid())
-            exitProcess(1)
+            exitProcess(10)
         } catch (e: Throwable) {
             // If we fail to handle the crash, fall back to default handler
             Timber.e(e, "Error handling crash")
