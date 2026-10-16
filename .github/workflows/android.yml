@@ -7,6 +7,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -56,6 +59,18 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
             tail -n 250 build.log >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Push Build Log to Debug Branch
+        if: always()
+        run: |
+          if [ -f build.log ]; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git checkout -B ci-build-log
+            git add -f build.log
+            git commit -m "ci: capture build log" || true
+            git push origin ci-build-log --force
           fi
 
       - name: Upload APK Artifact
