@@ -74,8 +74,27 @@ class App : Application(), SingletonImageLoader.Factory {
     @Inject
     lateinit var downloadUtilProvider: Provider<com.beatwave.music.playback.DownloadUtil>
 
+    private fun isCrashProcess(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            getProcessName().endsWith(":crash")
+        } else {
+            runCatching {
+                val pid = android.os.Process.myPid()
+                val am = getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+                am?.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName?.endsWith(":crash") == true
+            }.getOrDefault(false)
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
+
+        if (isCrashProcess()) {
+            if (BuildConfig.DEBUG) {
+                Timber.plant(Timber.DebugTree())
+            }
+            return
+        }
 
         // Restored synchronously, before anything else can start: the async
         // DataStore collector further down (applicationScope.launch { ... }

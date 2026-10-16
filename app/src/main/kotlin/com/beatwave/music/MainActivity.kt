@@ -438,6 +438,7 @@ private class TopBarChromeVisibility {
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     companion object {
+        var hasShownStartupSplash = false
         private const val ACTION_SEARCH = "com.beatwave.music.action.SEARCH"
         private const val ACTION_LIBRARY = "com.beatwave.music.action.LIBRARY"
 
@@ -2701,10 +2702,13 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // App Startup Animated Splash Overlay
-                var showAppSplash by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
+                var showAppSplash by remember { mutableStateOf(!hasShownStartupSplash) }
                 if (showAppSplash) {
                     AppStartupSplashScreen(
-                        onDismiss = { showAppSplash = false }
+                        onDismiss = {
+                            hasShownStartupSplash = true
+                            showAppSplash = false
+                        }
                     )
                 }
             }
@@ -2863,6 +2867,8 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             delay(1200L)
             isVisible = false
+            delay(450L)
+            onDismiss()
         }
 
         Box(

@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.beatwave.music.extensions.toEnum
 import kotlinx.coroutines.CoroutineScope
@@ -71,7 +72,9 @@ private fun DataStore<Preferences>.startPreferenceMirror() {
 private fun DataStore<Preferences>.snapshot(): Preferences {
     startPreferenceMirror()
     preferenceSnapshot.get()?.let { return it }
-    return runBlocking(Dispatchers.IO) { data.first() }
+    return runCatching {
+        runBlocking(Dispatchers.IO) { data.first() }
+    }.getOrDefault(emptyPreferences())
         .also { preferenceSnapshot.set(it) }
 }
 
