@@ -1243,7 +1243,7 @@ fun BeatWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
     // Single phase animation drives all waveform bars cleanly without composable loop calls
     val wavePhase by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = (2 * Math.PI).toFloat(),
+        targetValue = 6.2831855f,
         animationSpec = infiniteRepeatable(
             animation = tween(1600, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
@@ -1298,7 +1298,7 @@ fun BeatWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
         ) {
             val barCount = 9
             for (i in 0 until barCount) {
-                val factor = kotlin.math.sin(wavePhase + i * 0.7f).toFloat().coerceIn(-1f, 1f)
+                val factor = kotlin.math.sin(wavePhase + i * 0.7f).coerceIn(-1f, 1f)
                 val normalized = (factor + 1f) / 2f
                 val barHeight = (18 + normalized * 48).dp
                 val barColor = if (i % 2 == 0) primaryColor else secondaryColor

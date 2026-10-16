@@ -60,7 +60,7 @@ class CrashHandler private constructor(
             // Allow the ActivityManager binder call to dispatch before terminating the process
             try {
                 Thread.sleep(300)
-            } catch (_: InterruptedException) {}
+            } catch (e: InterruptedException) {}
 
             // Kill the current process
             android.os.Process.killProcess(android.os.Process.myPid())
