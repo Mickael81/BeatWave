@@ -226,12 +226,16 @@ fun isGlassSupported(sdkInt: Int = Build.VERSION.SDK_INT): Boolean = sdkInt >= B
 fun isLowRamDevice(): Boolean {
     val context = LocalContext.current
     return remember {
-        val am = context.getSystemService(ActivityManager::class.java)
-        if (am?.isLowRamDevice == true) return@remember true
-        val memInfo = ActivityManager.MemoryInfo()
-        am?.getMemoryInfo(memInfo)
-        val totalRamGb = memInfo.totalMem / (1024.0 * 1024.0 * 1024.0)
-        totalRamGb < 3.5 || Runtime.getRuntime().availableProcessors() <= 4
+        try {
+            val am = context.getSystemService(ActivityManager::class.java)
+            if (am?.isLowRamDevice == true) return@remember true
+            val memInfo = ActivityManager.MemoryInfo()
+            am?.getMemoryInfo(memInfo)
+            val totalRamGb = memInfo.totalMem / (1024.0 * 1024.0 * 1024.0)
+            totalRamGb < 3.5 || Runtime.getRuntime().availableProcessors() <= 4
+        } catch (_: Throwable) {
+            false
+        }
     }
 }
 
@@ -299,7 +303,7 @@ private const val HighlightAngleFrozen = (HighlightAngleMin + HighlightAngleMax)
 val LocalGlassEffectConfig = staticCompositionLocalOf { GlassEffectConfig() }
 
 /** The backdrop content (app UI) that glass surfaces sample from. */
-val LocalAppBackdrop = staticCompositionLocalOf<Backdrop> { error("No AppBackdrop provided") }
+val LocalAppBackdrop = staticCompositionLocalOf<Backdrop?> { null }
 
 /**
  * When set, glass surfaces in scope pool one recorded+effect-processed layer
@@ -379,7 +383,9 @@ fun Modifier.liquidGlass(
             .background(surfaceTintColor.copy(alpha = config.surfaceOpacity.coerceIn(0f, 1f)))
     }
 
-    val backdrop = LocalAppBackdrop.current
+    val backdrop = LocalAppBackdrop.current ?: return this
+        .clip(shape)
+        .background(surfaceTintColor.copy(alpha = config.surfaceOpacity.coerceIn(0f, 1f)))
     val density = LocalDensity.current
     val resolutionScale = backdropScale.coerceIn(0.05f, 1f)
     // Pixel-sized effect parameters operate on the backdrop layer at its recorded

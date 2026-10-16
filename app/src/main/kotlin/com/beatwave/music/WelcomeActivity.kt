@@ -198,13 +198,13 @@ class WelcomeActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            vivimusicTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    androidx.compose.runtime.CompositionLocalProvider(
-                        LocalPlayerAwareWindowInsets provides androidx.compose.foundation.layout.WindowInsets.systemBars
+            androidx.compose.runtime.CompositionLocalProvider(
+                LocalPlayerAwareWindowInsets provides androidx.compose.foundation.layout.WindowInsets.systemBars
+            ) {
+                vivimusicTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
                     ) {
                         WelcomePagerScreen(onFinished = {
                             lifecycleScope.launch {
