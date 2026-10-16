@@ -44,15 +44,17 @@ class YouTubeQueue(
                     val items = nextResult.items.map { it.toMediaItem() }.toMutableList()
 
                     // If YouTube only returned the single requested song, supplement with related tracks of the same genre
-                    if (items.size <= 1 && nextResult.relatedEndpoint != null) {
-                        try {
-                            val relatedPage = YouTube.related(nextResult.relatedEndpoint).getOrNull()
-                            relatedPage?.songs?.map { it.toMediaItem() }?.let { relatedItems ->
-                                val existingIds = items.map { it.mediaId }.toSet()
-                                items.addAll(relatedItems.filter { it.mediaId !in existingIds })
+                    if (items.size <= 1) {
+                        nextResult.relatedEndpoint?.let { relatedEndpoint ->
+                            try {
+                                val relatedPage = YouTube.related(relatedEndpoint).getOrNull()
+                                relatedPage?.songs?.map { it.toMediaItem() }?.let { relatedItems ->
+                                    val existingIds = items.map { it.mediaId }.toSet()
+                                    items.addAll(relatedItems.filter { it.mediaId !in existingIds })
+                                }
+                            } catch (_: Exception) {
+                                // Non-fatal fallback
                             }
-                        } catch (_: Exception) {
-                            // Non-fatal fallback
                         }
                     }
 
