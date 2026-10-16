@@ -76,17 +76,8 @@ class App : Application(), SingletonImageLoader.Factory {
 
     private fun isCrashProcess(): Boolean {
         return runCatching {
-            val processName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                runCatching { android.app.Application.getProcessName() }.getOrNull()
-            } else {
-                null
-            } ?: runCatching {
-                val pid = android.os.Process.myPid()
-                val am = getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
-                am?.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName
-            }.getOrNull()
-
-            processName?.endsWith(":crash") == true
+            val cmdline = java.io.File("/proc/self/cmdline").readText().trim().trim(0.toChar())
+            cmdline.endsWith(":crash")
         }.getOrDefault(false)
     }
 

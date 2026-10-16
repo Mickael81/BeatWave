@@ -34,7 +34,20 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Single Universal Release APK
-        run: ./gradlew assembleUniversalGmsRelease
+        run: ./gradlew assembleUniversalGmsRelease --stacktrace --no-daemon
+        env:
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+
+      - name: Upload Build Failure Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-failure-log
+          path: |
+            app/build/reports/
+            build.log
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
