@@ -11,6 +11,7 @@ package com.beatwave.music.ui.component.shapes
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.graphics.Outline
 import com.beatwave.music.ui.component.shapes.continuities.G2Continuity
 import com.beatwave.music.ui.component.shapes.path.PathSegments
@@ -35,6 +36,9 @@ interface Continuity {
         bottomRight: Float,
         bottomLeft: Float
     ): Outline {
+        if (size.width <= 0f || size.height <= 0f) {
+            return Outline.Rectangle(size.toRect())
+        }
         val path =
             createRoundedRectanglePathSegments(
                 width = size.width.toDouble(),

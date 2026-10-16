@@ -3,6 +3,7 @@ package com.beatwave.music.ui.theme
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
@@ -174,14 +175,10 @@ object AppleTokens {
  * reaching for `MaterialTheme.shapes` lands on the same vocabulary as code that
  * names the token directly.
  */
-val AppShapes: Shapes by lazy {
-    runCatching {
-        Shapes(
-            extraSmall = ContinuousRoundedRectangle(4.dp),
-            small = ContinuousRoundedRectangle(AppleTokens.Artwork),
-            medium = ContinuousRoundedRectangle(AppleTokens.Control),
-            large = ContinuousRoundedRectangle(AppleTokens.CardCorner),
-            extraLarge = ContinuousRoundedRectangle(AppleTokens.CardCornerLarge),
-        )
-    }.getOrElse { Shapes() }
-}
+val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(4.dp),
+    small = RoundedCornerShape(AppleTokens.Artwork),
+    medium = RoundedCornerShape(AppleTokens.Control),
+    large = RoundedCornerShape(AppleTokens.CardCorner),
+    extraLarge = RoundedCornerShape(AppleTokens.CardCornerLarge),
+)

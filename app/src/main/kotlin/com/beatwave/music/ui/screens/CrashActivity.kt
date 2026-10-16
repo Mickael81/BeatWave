@@ -68,13 +68,23 @@ class CrashActivity : ComponentActivity() {
         
         setContent {
             val darkTheme = isSystemInDarkTheme()
-            vivimusicTheme(darkTheme = darkTheme) {
-                CrashScreen(
-                    crashLog = crashLog,
-                    onClose = { finishAffinity() },
-                    onShare = { shareCrashLog(crashLog) },
-                    onCopy = { copyToClipboard(crashLog) }
-                )
+            val colorScheme = if (darkTheme) {
+                androidx.compose.material3.darkColorScheme()
+            } else {
+                androidx.compose.material3.lightColorScheme()
+            }
+            MaterialTheme(colorScheme = colorScheme) {
+                androidx.compose.material3.Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    CrashScreen(
+                        crashLog = crashLog,
+                        onClose = { finishAffinity() },
+                        onShare = { shareCrashLog(crashLog) },
+                        onCopy = { copyToClipboard(crashLog) }
+                    )
+                }
             }
         }
     }

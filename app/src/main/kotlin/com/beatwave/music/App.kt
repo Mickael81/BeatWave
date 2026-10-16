@@ -76,8 +76,19 @@ class App : Application(), SingletonImageLoader.Factory {
 
     private fun isCrashProcess(): Boolean {
         return runCatching {
-            val cmdline = java.io.File("/proc/self/cmdline").readText().trim().trim(0.toChar())
-            cmdline.endsWith(":crash")
+            val processName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                android.app.Application.getProcessName()
+            } else {
+                null
+            } ?: runCatching {
+                val pid = android.os.Process.myPid()
+                val am = getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+                am?.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName
+            }.getOrNull() ?: runCatching {
+                java.io.File("/proc/self/cmdline").readText().trim().trim(0.toChar())
+            }.getOrNull()
+
+            processName?.endsWith(":crash") == true
         }.getOrDefault(false)
     }
 
@@ -116,41 +127,41 @@ class App : Application(), SingletonImageLoader.Factory {
         // Load the coil cache size on a background thread so the first image
         // render never blocks on a DataStore read.
         applicationScope.launch(Dispatchers.IO) {
-            cachedCoilCacheSize = dataStore.data.map { it[MaxImageCacheSizeKey] ?: 512 }.first()
+            runCatching {
+                cachedCoilCacheSize = dataStore.data.map { it[MaxImageCacheSizeKey] ?: 512 }.first()
+            }
         }
 
         // Build DownloadUtil — and with it both SimpleCaches — off the main
         // thread, before MainActivity asks for it.
-        //
-        // MainActivity injects DownloadUtil, so Hilt was constructing it during
-        // that Activity's field injection, on the main thread, inside
-        // super.onCreate(). SimpleCache's constructor walks its whole cache
-        // directory and rebuilds an index from it, and DownloadUtil then reads
-        // the full download index cursor, so a cold start stalled for as long
-        // as those scans took — growing with every song the user cached, which
-        // is why startup got slower the more the app was used.
-        //
-        // Starting it here does not make the scan cheaper, it makes it
-        // concurrent: it runs alongside the rest of Application setup and
-        // Activity creation instead of serialising in front of the first frame.
-        // Hilt's @Singleton lock still makes MainActivity wait if it wins the
-        // race, so this is purely a head start, never a correctness change.
         applicationScope.launch(Dispatchers.IO) {
             runCatching { downloadUtilProvider.get() }
                 .onFailure { Timber.e(it, "Cache warm-up failed") }
         }
 
-        // تهيئة إعدادات التطبيق عند الإقلاع
+        // Initialize application settings on launch safely
         applicationScope.launch {
-            initializeSettings()
+            try {
+                initializeSettings()
+            } catch (t: Throwable) {
+                Timber.e(t, "Settings initialization failed")
+            }
 
             // Warm the cipher WebView off the first-play critical path
             launch(Dispatchers.IO) {
-                delay(100)
-                CipherDeobfuscator.prewarm()
+                try {
+                    delay(100)
+                    CipherDeobfuscator.prewarm()
+                } catch (t: Throwable) {
+                    Timber.e(t, "Cipher prewarm failed")
+                }
             }
 
-            observeSettingsChanges()
+            try {
+                observeSettingsChanges()
+            } catch (t: Throwable) {
+                Timber.e(t, "Settings observation failed")
+            }
         }
     }
 

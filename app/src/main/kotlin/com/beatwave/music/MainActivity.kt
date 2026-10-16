@@ -557,17 +557,10 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        runCatching { installSplashScreen() }
         super.onCreate(savedInstanceState)
 
         // Cached Supabase credentials, read after the splash is up.
-        //
-        // This used to run first, wrapped in runBlocking, so a cold start held
-        // the main thread on a preferences disk read before drawing anything.
-        // Nothing here is on the first-frame path — the only Supabase callers
-        // are the update/news checks, which fire well after the UI mounts — so
-        // the read happens once the window exists and the user sees the splash
-        // immediately instead of a frozen launch.
         try {
             val cachedUrl = dataStore.get(CachedSupabaseUrlKey, "")
             val cachedAnon = dataStore.get(CachedSupabaseAnonKey, "")
@@ -581,23 +574,22 @@ class MainActivity : ComponentActivity() {
                     jwks = cachedJwks.ifBlank { com.beatwave.music.BuildConfig.SUPABASE_JWKS_URL }
                 )
             }
-        } catch (_: Exception) {}
+        } catch (_: Throwable) {}
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_LTR
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // Listen Together temporarily disabled — same "needs more work before shipping"
-        // treatment PlayerSettings.kt already gives DJ mixing/creative transitions. Skipping
-        // initialize() keeps the client from ever connecting or reconnecting to a persisted
-        // room in the background; the CompositionLocal below is also nulled so every UI entry
-        // point falls back to its existing "manager not available" state instead.
-        listenTogetherManager.initialize()
+        runCatching {
+            listenTogetherManager.initialize()
+        }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            val locale = dataStore[AppLanguageKey]
-                ?.takeUnless { it == SYSTEM_DEFAULT }
-                ?.let { Locale.forLanguageTag(it) }
-                ?: Locale.getDefault()
-            setAppLocale(this, locale)
+            runCatching {
+                val locale = dataStore[AppLanguageKey]
+                    ?.takeUnless { it == SYSTEM_DEFAULT }
+                    ?.let { Locale.forLanguageTag(it) }
+                    ?: Locale.getDefault()
+                setAppLocale(this, locale)
+            }
         }
 
         lifecycleScope.launch {
@@ -2930,7 +2922,7 @@ class MainActivity : ComponentActivity() {
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
                     border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
-                    shadowElevation = 16.dp,
+                    shadowElevation = 0.dp,
                     modifier = Modifier.size(108.dp)
                 ) {
                     Box(

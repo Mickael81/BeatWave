@@ -49,24 +49,52 @@ open class ContinuousRoundedRectangle(
         bottomStart: Float,
         layoutDirection: LayoutDirection
     ): Outline {
-        // rectangle
-        if (topStart + topEnd + bottomEnd + bottomStart == 0f) {
+        if (size.width <= 0f || size.height <= 0f) {
             return Outline.Rectangle(size.toRect())
         }
 
-        val maxRadius = min(size.width, size.height) * 0.5f
-        val topLeft = (if (layoutDirection == Ltr) topStart else topEnd).fastCoerceIn(0f, maxRadius)
-        val topRight = (if (layoutDirection == Ltr) topEnd else topStart).fastCoerceIn(0f, maxRadius)
-        val bottomRight = (if (layoutDirection == Ltr) bottomEnd else bottomStart).fastCoerceIn(0f, maxRadius)
-        val bottomLeft = (if (layoutDirection == Ltr) bottomStart else bottomEnd).fastCoerceIn(0f, maxRadius)
+        // rectangle
+        if (topStart + topEnd + bottomEnd + bottomStart <= 0f) {
+            return Outline.Rectangle(size.toRect())
+        }
 
-        return continuity.createRoundedRectangleOutline(
-            size = size,
-            topLeft = topLeft,
-            topRight = topRight,
-            bottomRight = bottomRight,
-            bottomLeft = bottomLeft
-        )
+        return try {
+            val maxRadius = min(size.width, size.height) * 0.5f
+            val topLeft = (if (layoutDirection == Ltr) topStart else topEnd).fastCoerceIn(0f, maxRadius)
+            val topRight = (if (layoutDirection == Ltr) topEnd else topStart).fastCoerceIn(0f, maxRadius)
+            val bottomRight = (if (layoutDirection == Ltr) bottomEnd else bottomStart).fastCoerceIn(0f, maxRadius)
+            val bottomLeft = (if (layoutDirection == Ltr) bottomStart else bottomEnd).fastCoerceIn(0f, maxRadius)
+
+            if (topLeft <= 0f && topRight <= 0f && bottomRight <= 0f && bottomLeft <= 0f) {
+                Outline.Rectangle(size.toRect())
+            } else {
+                continuity.createRoundedRectangleOutline(
+                    size = size,
+                    topLeft = topLeft,
+                    topRight = topRight,
+                    bottomRight = bottomRight,
+                    bottomLeft = bottomLeft
+                )
+            }
+        } catch (_: Throwable) {
+            val maxRadius = min(size.width, size.height) * 0.5f
+            val topLeft = (if (layoutDirection == Ltr) topStart else topEnd).coerceIn(0f, maxRadius)
+            val topRight = (if (layoutDirection == Ltr) topEnd else topStart).coerceIn(0f, maxRadius)
+            val bottomRight = (if (layoutDirection == Ltr) bottomEnd else bottomStart).coerceIn(0f, maxRadius)
+            val bottomLeft = (if (layoutDirection == Ltr) bottomStart else bottomEnd).coerceIn(0f, maxRadius)
+            Outline.Rounded(
+                androidx.compose.ui.geometry.RoundRect(
+                    left = 0f,
+                    top = 0f,
+                    right = size.width,
+                    bottom = size.height,
+                    topLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius(topLeft),
+                    topRightCornerRadius = androidx.compose.ui.geometry.CornerRadius(topRight),
+                    bottomRightCornerRadius = androidx.compose.ui.geometry.CornerRadius(bottomRight),
+                    bottomLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius(bottomLeft)
+                )
+            )
+        }
     }
 
     override fun copy(

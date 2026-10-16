@@ -185,10 +185,10 @@ data class OnboardingPageInfo(
 
 class WelcomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        runCatching { installSplashScreen() }
         super.onCreate(savedInstanceState)
 
-        val isFirstRun = dataStore.get(IsFirstRunKey, true)
+        val isFirstRun = runCatching { dataStore.get(IsFirstRunKey, true) }.getOrDefault(false)
         val forceShow = intent.getBooleanExtra("FORCE_SHOW", false)
 
         if (!isFirstRun && !forceShow) {
@@ -208,7 +208,7 @@ class WelcomeActivity : ComponentActivity() {
                     ) {
                         WelcomePagerScreen(onFinished = {
                             lifecycleScope.launch {
-                                dataStore.edit { it[IsFirstRunKey] = false }
+                                runCatching { dataStore.edit { it[IsFirstRunKey] = false } }
                                 if (forceShow) {
                                     finish()
                                 } else {
@@ -223,7 +223,9 @@ class WelcomeActivity : ComponentActivity() {
     }
 
     private fun finishOnboarding() {
-        startActivity(Intent(this, MainActivity::class.java))
+        runCatching {
+            startActivity(Intent(this, MainActivity::class.java))
+        }
         finish()
     }
 }
