@@ -174,10 +174,14 @@ object AppleTokens {
  * reaching for `MaterialTheme.shapes` lands on the same vocabulary as code that
  * names the token directly.
  */
-val AppShapes = Shapes(
-    extraSmall = ContinuousRoundedRectangle(4.dp),
-    small = ContinuousRoundedRectangle(AppleTokens.Artwork),
-    medium = ContinuousRoundedRectangle(AppleTokens.Control),
-    large = ContinuousRoundedRectangle(AppleTokens.CardCorner),
-    extraLarge = ContinuousRoundedRectangle(AppleTokens.CardCornerLarge),
-)
+val AppShapes: Shapes by lazy {
+    runCatching {
+        Shapes(
+            extraSmall = ContinuousRoundedRectangle(4.dp),
+            small = ContinuousRoundedRectangle(AppleTokens.Artwork),
+            medium = ContinuousRoundedRectangle(AppleTokens.Control),
+            large = ContinuousRoundedRectangle(AppleTokens.CardCorner),
+            extraLarge = ContinuousRoundedRectangle(AppleTokens.CardCornerLarge),
+        )
+    }.getOrElse { Shapes() }
+}

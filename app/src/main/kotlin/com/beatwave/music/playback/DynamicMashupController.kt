@@ -40,7 +40,7 @@ object DynamicMashupController {
         private set
 
     private var mashupJob: Job? = null
-    private val scope = CoroutineScope(Dispatchers.Main)
+    private val scope by lazy { CoroutineScope(Dispatchers.Main.immediate) }
     private var playerConnectionRef: PlayerConnection? = null
 
     fun getIntervalForStyle(style: MashupTransitionStyle): Int = when (style) {

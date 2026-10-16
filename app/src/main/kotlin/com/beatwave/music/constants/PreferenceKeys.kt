@@ -66,7 +66,7 @@ enum class AppFont(val value: String) {
     SANS_SERIF("sans_serif");
 
     companion object {
-        fun fromValue(value: String): AppFont = entries.find { it.value == value } ?: SYSTEM
+        fun fromValue(value: String): AppFont = values().find { it.value == value } ?: SYSTEM
     }
 }
 
@@ -81,7 +81,7 @@ enum class DensityScale(val value: Float, val label: String) {
     ULTRA_COMPACT(0.55f, "Ultra Compact (55%)");
 
     companion object {
-        fun fromValue(value: Float): DensityScale = entries.find { it.value == value } ?: NATIVE
+        fun fromValue(value: Float): DensityScale = values().find { it.value == value } ?: NATIVE
     }
 }
 

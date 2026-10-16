@@ -18,13 +18,17 @@ import com.beatwave.music.utils.rememberPreference
 const val BrandName = "BeatWave"
 
 /** Chillax — display face for artist titles. */
-val ChillaxFontFamily = FontFamily(
-    Font(R.font.chillax_light, FontWeight.Light),
-    Font(R.font.chillax_regular, FontWeight.Normal),
-    Font(R.font.chillax_medium, FontWeight.Medium),
-    Font(R.font.chillax_semibold, FontWeight.SemiBold),
-    Font(R.font.chillax_bold, FontWeight.Bold),
-)
+val ChillaxFontFamily: FontFamily by lazy {
+    runCatching {
+        FontFamily(
+            Font(R.font.chillax_light, FontWeight.Light),
+            Font(R.font.chillax_regular, FontWeight.Normal),
+            Font(R.font.chillax_medium, FontWeight.Medium),
+            Font(R.font.chillax_semibold, FontWeight.SemiBold),
+            Font(R.font.chillax_bold, FontWeight.Bold),
+        )
+    }.getOrDefault(FontFamily.Default)
+}
 
 /**
  * Outfit font family for the BeatWave brand wordmark and display headers.

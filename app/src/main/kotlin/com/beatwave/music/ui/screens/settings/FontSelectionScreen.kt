@@ -122,22 +122,24 @@ fun FontSelectionScreen(
     }
 
     val activeFontFamily = remember(selectedFont) {
-        when (AppFont.fromValue(selectedFont)) {
-            AppFont.SYSTEM -> FontFamily.Default
-            AppFont.GOOGLE_SANS -> GoogleSansFontFamily
-            AppFont.SANS_FLEX -> SansFlexFontFamily
-            AppFont.OUTFIT -> OutfitFontFamily
-            AppFont.PLUS_JAKARTA_SANS -> PlusJakartaSansFontFamily
-            AppFont.CHILLAX -> ChillaxFontFamily
-            AppFont.CHILLAX_BOLD -> ChillaxBoldFontFamily
-            AppFont.CHILLAX_LIGHT -> ChillaxLightFontFamily
-            AppFont.BBH_BARTLE -> BbhBartleFontFamily
-            AppFont.MONOSPACE -> MonospaceFontFamily
-            AppFont.SERIF -> SerifFontFamily
-            AppFont.CURSIVE -> CursiveFontFamily
-            AppFont.SANS_SERIF -> SansSerifFontFamily
-            else -> FontFamily.Default
-        }
+        runCatching {
+            when (AppFont.fromValue(selectedFont)) {
+                AppFont.SYSTEM -> FontFamily.Default
+                AppFont.GOOGLE_SANS -> GoogleSansFontFamily
+                AppFont.SANS_FLEX -> SansFlexFontFamily
+                AppFont.OUTFIT -> OutfitFontFamily
+                AppFont.PLUS_JAKARTA_SANS -> PlusJakartaSansFontFamily
+                AppFont.CHILLAX -> ChillaxFontFamily
+                AppFont.CHILLAX_BOLD -> ChillaxBoldFontFamily
+                AppFont.CHILLAX_LIGHT -> ChillaxLightFontFamily
+                AppFont.BBH_BARTLE -> BbhBartleFontFamily
+                AppFont.MONOSPACE -> MonospaceFontFamily
+                AppFont.SERIF -> SerifFontFamily
+                AppFont.CURSIVE -> CursiveFontFamily
+                AppFont.SANS_SERIF -> SansSerifFontFamily
+                else -> FontFamily.Default
+            }
+        }.getOrDefault(FontFamily.Default)
     }
 
     Scaffold(

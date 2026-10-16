@@ -229,13 +229,17 @@ class WelcomeActivity : ComponentActivity() {
 }
 
 @OptIn(ExperimentalTextApi::class)
-val GoogleSansFlex = FontFamily(
-    Font(
-        resId = com.beatwave.music.R.font.google_sans_flex,
-        weight = FontWeight.Normal,
-        style = FontStyle.Normal
-    )
-)
+val GoogleSansFlex: FontFamily by lazy {
+    runCatching {
+        FontFamily(
+            Font(
+                resId = com.beatwave.music.R.font.google_sans_flex,
+                weight = FontWeight.Normal,
+                style = FontStyle.Normal
+            )
+        )
+    }.getOrDefault(FontFamily.Default)
+}
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
@@ -252,12 +256,16 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
     val bottomCardShape =
         RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
 
-    val customWelcomeFontFamily = FontFamily(
-        Font(
-            resId = com.beatwave.music.R.font.sans_flex,
-            weight = FontWeight.Light
-        )
-    )
+    val customWelcomeFontFamily = remember {
+        runCatching {
+            FontFamily(
+                Font(
+                    resId = com.beatwave.music.R.font.sans_flex,
+                    weight = FontWeight.Light
+                )
+            )
+        }.getOrDefault(FontFamily.Default)
+    }
 
     val thinHeaderStyle = TextStyle(
         fontFamily = customWelcomeFontFamily,

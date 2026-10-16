@@ -77,6 +77,11 @@ class CrashHandler private constructor(
             throwable.printStackTrace(PrintWriter(this))
         }.toString()
 
+        var rootCause: Throwable = throwable
+        while (rootCause.cause != null && rootCause.cause !== rootCause) {
+            rootCause = rootCause.cause!!
+        }
+
         return buildString {
             appendLine("BeatWave Crash Report")
             appendLine("=".repeat(50))
@@ -86,6 +91,15 @@ class CrashHandler private constructor(
             appendLine("Android version: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
             appendLine("App version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
             appendLine()
+            if (rootCause !== throwable) {
+                appendLine("Root Cause: ${rootCause.javaClass.name}: ${rootCause.message}")
+                val rootTrace = StringWriter().apply {
+                    rootCause.printStackTrace(PrintWriter(this))
+                }.toString()
+                appendLine("Root Cause Stacktrace:")
+                appendLine(rootTrace.lines().take(25).joinToString("\n"))
+                appendLine()
+            }
             appendLine("=".repeat(50))
             appendLine("Stacktrace:")
             appendLine("=".repeat(50))

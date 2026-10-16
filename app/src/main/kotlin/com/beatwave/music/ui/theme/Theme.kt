@@ -93,22 +93,24 @@ fun vivimusicTheme(
     val customFont = rememberCustomFontFamily()
 
     val appFont = remember(selectedFont, customFont) {
-        when (AppFont.fromValue(selectedFont)) {
-            AppFont.SYSTEM -> customFont ?: FontFamily.Default
-            AppFont.GOOGLE_SANS -> GoogleSansFontFamily
-            AppFont.SANS_FLEX -> SansFlexFontFamily
-            AppFont.OUTFIT -> OutfitFontFamily
-            AppFont.PLUS_JAKARTA_SANS -> PlusJakartaSansFontFamily
-            AppFont.CHILLAX -> ChillaxFontFamily
-            AppFont.CHILLAX_BOLD -> ChillaxBoldFontFamily
-            AppFont.CHILLAX_LIGHT -> ChillaxLightFontFamily
-            AppFont.BBH_BARTLE -> BbhBartleFontFamily
-            AppFont.MONOSPACE -> MonospaceFontFamily
-            AppFont.SERIF -> SerifFontFamily
-            AppFont.CURSIVE -> CursiveFontFamily
-            AppFont.SANS_SERIF -> SansSerifFontFamily
-            else -> customFont ?: FontFamily.Default
-        }
+        runCatching {
+            when (AppFont.fromValue(selectedFont)) {
+                AppFont.SYSTEM -> customFont ?: FontFamily.Default
+                AppFont.GOOGLE_SANS -> GoogleSansFontFamily
+                AppFont.SANS_FLEX -> SansFlexFontFamily
+                AppFont.OUTFIT -> OutfitFontFamily
+                AppFont.PLUS_JAKARTA_SANS -> PlusJakartaSansFontFamily
+                AppFont.CHILLAX -> ChillaxFontFamily
+                AppFont.CHILLAX_BOLD -> ChillaxBoldFontFamily
+                AppFont.CHILLAX_LIGHT -> ChillaxLightFontFamily
+                AppFont.BBH_BARTLE -> BbhBartleFontFamily
+                AppFont.MONOSPACE -> MonospaceFontFamily
+                AppFont.SERIF -> SerifFontFamily
+                AppFont.CURSIVE -> CursiveFontFamily
+                AppFont.SANS_SERIF -> SansSerifFontFamily
+                else -> customFont ?: FontFamily.Default
+            }
+        }.getOrDefault(customFont ?: FontFamily.Default)
     }
 
     androidx.compose.runtime.CompositionLocalProvider(

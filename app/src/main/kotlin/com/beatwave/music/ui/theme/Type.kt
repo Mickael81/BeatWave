@@ -18,49 +18,75 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.beatwave.music.R
 
-val GoogleSansFontFamily = FontFamily(
-    Font(resId = R.font.google_sans_flex, weight = FontWeight.Normal),
-    Font(resId = R.font.google_sans_flex, weight = FontWeight.Medium),
-    Font(resId = R.font.google_sans_flex, weight = FontWeight.Bold)
-)
+val GoogleSansFontFamily: FontFamily by lazy {
+    runCatching {
+        FontFamily(
+            Font(resId = R.font.google_sans_flex, weight = FontWeight.Normal),
+            Font(resId = R.font.google_sans_flex, weight = FontWeight.Medium),
+            Font(resId = R.font.google_sans_flex, weight = FontWeight.Bold)
+        )
+    }.getOrDefault(FontFamily.Default)
+}
 
-val SansFlexFontFamily = FontFamily(
-    Font(resId = R.font.sans_flex, weight = FontWeight.Normal),
-    Font(resId = R.font.sans_flex, weight = FontWeight.Medium),
-    Font(resId = R.font.sans_flex, weight = FontWeight.Bold)
-)
+val SansFlexFontFamily: FontFamily by lazy {
+    runCatching {
+        FontFamily(
+            Font(resId = R.font.sans_flex, weight = FontWeight.Normal),
+            Font(resId = R.font.sans_flex, weight = FontWeight.Medium),
+            Font(resId = R.font.sans_flex, weight = FontWeight.Bold)
+        )
+    }.getOrDefault(FontFamily.Default)
+}
 
-val OutfitFontFamily = FontFamily(
-    Font(resId = R.font.outfit, weight = FontWeight.Normal),
-    Font(resId = R.font.outfit, weight = FontWeight.Medium),
-    Font(resId = R.font.outfit, weight = FontWeight.Bold)
-)
+val OutfitFontFamily: FontFamily by lazy {
+    runCatching {
+        FontFamily(
+            Font(resId = R.font.outfit, weight = FontWeight.Normal),
+            Font(resId = R.font.outfit, weight = FontWeight.Medium),
+            Font(resId = R.font.outfit, weight = FontWeight.Bold)
+        )
+    }.getOrDefault(FontFamily.Default)
+}
 
-val PlusJakartaSansFontFamily = FontFamily(
-    Font(resId = R.font.plus_jakarta_sans, weight = FontWeight.Normal),
-    Font(resId = R.font.plus_jakarta_sans, weight = FontWeight.Medium),
-    Font(resId = R.font.plus_jakarta_sans, weight = FontWeight.Bold)
-)
+val PlusJakartaSansFontFamily: FontFamily by lazy {
+    runCatching {
+        FontFamily(
+            Font(resId = R.font.plus_jakarta_sans, weight = FontWeight.Normal),
+            Font(resId = R.font.plus_jakarta_sans, weight = FontWeight.Medium),
+            Font(resId = R.font.plus_jakarta_sans, weight = FontWeight.Bold)
+        )
+    }.getOrDefault(FontFamily.Default)
+}
 
-val ChillaxLightFontFamily = FontFamily(
-    Font(resId = R.font.chillax_light, weight = FontWeight.Light),
-    Font(resId = R.font.chillax_extralight, weight = FontWeight.ExtraLight)
-)
+val ChillaxLightFontFamily: FontFamily by lazy {
+    runCatching {
+        FontFamily(
+            Font(resId = R.font.chillax_light, weight = FontWeight.Light),
+            Font(resId = R.font.chillax_extralight, weight = FontWeight.ExtraLight)
+        )
+    }.getOrDefault(FontFamily.Default)
+}
 
-val ChillaxBoldFontFamily = FontFamily(
-    Font(resId = R.font.chillax_bold, weight = FontWeight.Bold),
-    Font(resId = R.font.chillax_semibold, weight = FontWeight.SemiBold)
-)
+val ChillaxBoldFontFamily: FontFamily by lazy {
+    runCatching {
+        FontFamily(
+            Font(resId = R.font.chillax_bold, weight = FontWeight.Bold),
+            Font(resId = R.font.chillax_semibold, weight = FontWeight.SemiBold)
+        )
+    }.getOrDefault(FontFamily.Default)
+}
 
-val BbhBartleFontFamily = bbhBartle
+val BbhBartleFontFamily: FontFamily by lazy {
+    runCatching { bbhBartle }.getOrDefault(FontFamily.Default)
+}
 
-val MonospaceFontFamily = FontFamily.Monospace
+val MonospaceFontFamily: FontFamily = FontFamily.Monospace
 
-val SerifFontFamily = FontFamily.Serif
+val SerifFontFamily: FontFamily = FontFamily.Serif
 
-val CursiveFontFamily = FontFamily.Cursive
+val CursiveFontFamily: FontFamily = FontFamily.Cursive
 
-val SansSerifFontFamily = FontFamily.SansSerif
+val SansSerifFontFamily: FontFamily = FontFamily.SansSerif
 
 /**
  * Shared text metrics for every role below.
@@ -128,20 +154,26 @@ private fun appTextStyle(
  * when none is installed.
  */
 @OptIn(ExperimentalTextApi::class)
-fun AppTypography(fontFamily: FontFamily = FontFamily.Default) = Typography(
-    displayLarge = appTextStyle(fontFamily, FontWeight.SemiBold, 57.sp, 64.sp, (-1.2).sp),
-    displayMedium = appTextStyle(fontFamily, FontWeight.SemiBold, 45.sp, 52.sp, (-0.9).sp),
-    displaySmall = appTextStyle(fontFamily, FontWeight.SemiBold, 36.sp, 44.sp, (-0.6).sp),
-    headlineLarge = appTextStyle(fontFamily, FontWeight.SemiBold, 32.sp, 40.sp, (-0.5).sp),
-    headlineMedium = appTextStyle(fontFamily, FontWeight.SemiBold, 28.sp, 36.sp, (-0.4).sp),
-    headlineSmall = appTextStyle(fontFamily, FontWeight.SemiBold, 24.sp, 32.sp, (-0.3).sp),
-    titleLarge = appTextStyle(fontFamily, FontWeight.SemiBold, 22.sp, 28.sp, (-0.25).sp),
-    titleMedium = appTextStyle(fontFamily, FontWeight.SemiBold, 16.sp, 24.sp, (-0.1).sp),
-    titleSmall = appTextStyle(fontFamily, FontWeight.Medium, 14.sp, 20.sp, 0.sp),
-    bodyLarge = appTextStyle(fontFamily, FontWeight.Normal, 16.sp, 24.sp, 0.sp),
-    bodyMedium = appTextStyle(fontFamily, FontWeight.Normal, 14.sp, 20.sp, 0.1.sp),
-    bodySmall = appTextStyle(fontFamily, FontWeight.Normal, 12.sp, 16.sp, 0.2.sp),
-    labelLarge = appTextStyle(fontFamily, FontWeight.Medium, 14.sp, 20.sp, 0.1.sp),
-    labelMedium = appTextStyle(fontFamily, FontWeight.Medium, 12.sp, 16.sp, 0.4.sp),
-    labelSmall = appTextStyle(fontFamily, FontWeight.Medium, 11.sp, 16.sp, 0.45.sp),
-)
+fun AppTypography(fontFamily: FontFamily = FontFamily.Default): Typography {
+    return runCatching {
+        Typography(
+            displayLarge = appTextStyle(fontFamily, FontWeight.SemiBold, 57.sp, 64.sp, (-1.2).sp),
+            displayMedium = appTextStyle(fontFamily, FontWeight.SemiBold, 45.sp, 52.sp, (-0.9).sp),
+            displaySmall = appTextStyle(fontFamily, FontWeight.SemiBold, 36.sp, 44.sp, (-0.6).sp),
+            headlineLarge = appTextStyle(fontFamily, FontWeight.SemiBold, 32.sp, 40.sp, (-0.5).sp),
+            headlineMedium = appTextStyle(fontFamily, FontWeight.SemiBold, 28.sp, 36.sp, (-0.4).sp),
+            headlineSmall = appTextStyle(fontFamily, FontWeight.SemiBold, 24.sp, 32.sp, (-0.3).sp),
+            titleLarge = appTextStyle(fontFamily, FontWeight.SemiBold, 22.sp, 28.sp, (-0.25).sp),
+            titleMedium = appTextStyle(fontFamily, FontWeight.SemiBold, 16.sp, 24.sp, (-0.1).sp),
+            titleSmall = appTextStyle(fontFamily, FontWeight.Medium, 14.sp, 20.sp, 0.sp),
+            bodyLarge = appTextStyle(fontFamily, FontWeight.Normal, 16.sp, 24.sp, 0.sp),
+            bodyMedium = appTextStyle(fontFamily, FontWeight.Normal, 14.sp, 20.sp, 0.1.sp),
+            bodySmall = appTextStyle(fontFamily, FontWeight.Normal, 12.sp, 16.sp, 0.2.sp),
+            labelLarge = appTextStyle(fontFamily, FontWeight.Medium, 14.sp, 20.sp, 0.1.sp),
+            labelMedium = appTextStyle(fontFamily, FontWeight.Medium, 12.sp, 16.sp, 0.4.sp),
+            labelSmall = appTextStyle(fontFamily, FontWeight.Medium, 11.sp, 16.sp, 0.45.sp),
+        )
+    }.getOrElse {
+        Typography()
+    }
+}

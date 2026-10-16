@@ -80,3 +80,11 @@ jobs:
         with:
           name: BeatWave-v4.4.0-latest
           path: app/build/outputs/apk/universalGms/release/*.apk
+
+      - name: Upload ProGuard/R8 Mapping
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal-gms-mapping
+          path: app/build/outputs/mapping/universalGmsRelease/mapping.txt
+          if-no-files-found: ignore
