@@ -238,50 +238,14 @@ fun Modifier.hideWhileArtworkMorphing(progress: () -> Float): Modifier = graphic
 /**
  * Renders an intense burning/dissolving wavefront with glowing incandescent embers and drifting sparks.
  */
-private data class MorphParticle(
-    val xRatio: Float,
-    val yRatio: Float,
-    val baseRadiusDp: Float,
-    val driftX: Float,
-    val driftY: Float,
-    val turbFreq: Float,
-    val colorIndex: Int,
-    val isStreak: Boolean,
-    val streakLengthDp: Float
-)
-
-private val MORPH_PARTICLES: List<MorphParticle> = run {
-    var seed = 20261017L
-    fun nextFloat(): Float {
-        seed = (seed * 1664525L + 1013904223L) and 0xFFFFFFFFL
-        return (seed and 0x7FFFFFFFL).toFloat() / 0x7FFFFFFFL.toFloat()
-    }
-    List(160) { i ->
-        val xRatio = nextFloat()
-        val yRatio = nextFloat()
-        val baseRadius = 1.0f + (nextFloat() * 3.5f)
-        val driftX = (nextFloat() - 0.5f) * 2.2f
-        val driftY = -0.4f - (nextFloat() * 1.6f)
-        val turb = 6f + (nextFloat() * 14f)
-        val colorIdx = when {
-            i % 5 == 0 -> 0 // Electric Cyan (0xFF00E5FF)
-            i % 5 == 1 -> 1 // Vivid Neon Magenta (0xFFFF007F)
-            i % 5 == 2 -> 2 // Radiant Gold (0xFFFFD700)
-            i % 5 == 3 -> 3 // Starlight White (0xFFFFFFFF)
-            else -> 4       // Electric Violet (0xFFB388FF)
-        }
-        val isStreak = (i % 5 == 0)
-        val streakLength = 12f + (nextFloat() * 28f)
-        MorphParticle(xRatio, yRatio, baseRadius, driftX, driftY, turb, colorIdx, isStreak, streakLength)
-    }
-}
-
 /**
- * Dynamic particle morph overlay rendering radiant energy particles, chromatic glitch streaks,
- * and holographic scanlines during artwork transition, exactly matching convxdemo.mp4.
+ * Holographic glitch and chromatic prism overlay matching convxdemo.mp4:
+ * - Upper-left corner chromatic prism flare streak
+ * - Dynamic horizontal chromatic glitch scanline bars
+ * - Fine digital CRT scanline texture
  */
 @Composable
-fun ParticleMorphOverlay(
+fun HolographicGlitchOverlay(
     progress: Float,
     modifier: Modifier = Modifier
 ) {
@@ -291,106 +255,83 @@ fun ParticleMorphOverlay(
     Canvas(modifier = modifier.fillMaxSize()) {
         val w = size.width
         val h = size.height
-        val peakIntensity = kotlin.math.sin(progress * Math.PI.toFloat())
+        val peak = kotlin.math.sin(progress * Math.PI.toFloat())
 
-        // 1. Shimmering horizontal chromatic glitch bars across the artwork during peak
-        if (peakIntensity > 0.15f) {
-            val glitchSlices = 7
-            for (j in 0 until glitchSlices) {
-                val sliceNorm = (j.toFloat() / glitchSlices.toFloat())
-                val sliceY = (h * sliceNorm) + (kotlin.math.sin(progress * 22.0 + j * 3.0).toFloat() * with(density) { 6.dp.toPx() })
-                val sliceH = with(density) { (3.dp + (j % 3).dp).toPx() }
-                val sliceShift = kotlin.math.sin(progress * 26.0 + j * 5.0).toFloat() * with(density) { 14.dp.toPx() } * peakIntensity
+        if (peak <= 0.04f) return@Canvas
 
-                val sliceColor = if (j % 2 == 0) {
-                    Color(0xFF00E5FF).copy(alpha = 0.22f * peakIntensity)
-                } else {
-                    Color(0xFFFF007F).copy(alpha = 0.22f * peakIntensity)
-                }
+        // 1. Top-left angled rainbow chromatic prism light flare (matching convxdemo.mp4)
+        val flareAlpha = (peak * 0.50f).coerceIn(0f, 1f)
+        val flareBrush = Brush.radialGradient(
+            colors = listOf(
+                Color(0xFF00E5FF).copy(alpha = flareAlpha * 0.85f),
+                Color(0xFFFF007F).copy(alpha = flareAlpha * 0.70f),
+                Color(0xFFFFEA00).copy(alpha = flareAlpha * 0.50f),
+                Color.Transparent
+            ),
+            center = Offset(w * 0.12f, h * 0.12f),
+            radius = w * 0.50f * (0.8f + 0.35f * peak)
+        )
+        drawRect(
+            brush = flareBrush,
+            size = GeometrySize(w, h),
+            blendMode = BlendMode.Screen
+        )
 
+        // 2. Horizontal chromatic glitch scanline displacement bars across artwork
+        val sliceCount = 14
+        for (i in 0 until sliceCount) {
+            val sliceY = (i.toFloat() / sliceCount) * h
+            val sliceH = (h / sliceCount) * 0.85f
+            val wave = kotlin.math.sin((i * 1.7) + (progress * 26.0)).toFloat()
+            val sliceShift = wave * with(density) { 14.dp.toPx() } * peak
+
+            if (kotlin.math.abs(wave) > 0.30f) {
+                // Cyan channel edge
                 drawRect(
-                    color = sliceColor,
-                    topLeft = Offset(sliceShift, sliceY.coerceIn(0f, h - sliceH)),
+                    color = Color(0xFF00E5FF).copy(alpha = 0.25f * peak),
+                    topLeft = Offset(sliceShift, sliceY),
+                    size = GeometrySize(w, sliceH),
+                    blendMode = BlendMode.Screen
+                )
+                // Magenta channel edge
+                drawRect(
+                    color = Color(0xFFFF007F).copy(alpha = 0.25f * peak),
+                    topLeft = Offset(-sliceShift * 0.85f, sliceY),
                     size = GeometrySize(w, sliceH),
                     blendMode = BlendMode.Screen
                 )
             }
         }
 
-        // 2. High-energy particle field
-        val particleColors = arrayOf(
-            Color(0xFF00E5FF), // Cyan
-            Color(0xFFFF007F), // Magenta
-            Color(0xFFFFD700), // Gold
-            Color(0xFFFFFFFF), // White
-            Color(0xFFB388FF)  // Violet
-        )
-
-        for (p in MORPH_PARTICLES) {
-            // Outward radial dispersion from center
-            val dxCenter = (p.xRatio - 0.5f)
-            val dyCenter = (p.yRatio - 0.5f)
-            val dispersionPx = with(density) { (55.dp * progress).toPx() }
-
-            // Harmonic wave turbulence
-            val turbX = kotlin.math.sin(p.yRatio * 18.0 + progress * 14.0 + p.turbFreq).toFloat() * with(density) { 18.dp.toPx() } * peakIntensity
-            val turbY = kotlin.math.cos(p.xRatio * 16.0 + progress * 10.0).toFloat() * with(density) { 14.dp.toPx() } * peakIntensity
-
-            // Kinetic lift (particles float upward)
-            val liftY = p.driftY * with(density) { (45.dp * progress).toPx() }
-
-            val posX = (p.xRatio * w) + (dxCenter * dispersionPx) + turbX
-            val posY = (p.yRatio * h) + (dyCenter * dispersionPx) + liftY + turbY
-
-            if (posX in -40f..(w + 40f) && posY in -40f..(h + 40f)) {
-                val phase = (p.xRatio * 0.4f) + (p.yRatio * 0.2f)
-                val particleAlpha = (kotlin.math.sin((progress * 0.85f + phase) * Math.PI.toFloat()) * peakIntensity * 1.15f).coerceIn(0f, 1f)
-                val radius = with(density) { (p.baseRadiusDp * (0.7f + 0.6f * peakIntensity)).dp.toPx() }
-                val color = particleColors[p.colorIndex]
-
-                // Outer ambient glow halo
-                drawCircle(
-                    color = color.copy(alpha = particleAlpha * 0.35f),
-                    radius = radius * 2.8f,
-                    center = Offset(posX, posY),
-                    blendMode = BlendMode.Screen
-                )
-
-                // Inner brilliant core
-                drawCircle(
-                    color = if (p.colorIndex == 3) Color.White.copy(alpha = particleAlpha * 0.95f) else color.copy(alpha = particleAlpha * 0.90f),
-                    radius = radius,
-                    center = Offset(posX, posY),
-                    blendMode = BlendMode.Screen
-                )
-
-                // Glitch streak trail
-                if (p.isStreak && peakIntensity > 0.12f) {
-                    val streakPx = with(density) { (p.streakLengthDp * peakIntensity).dp.toPx() }
-                    drawLine(
-                        color = color.copy(alpha = particleAlpha * 0.65f),
-                        start = Offset(posX - streakPx, posY),
-                        end = Offset(posX + streakPx, posY),
-                        strokeWidth = with(density) { 1.5.dp.toPx() },
-                        blendMode = BlendMode.Screen
-                    )
-                }
-            }
+        // 3. Fine holographic horizontal scanlines
+        val scanlineStep = with(density) { 4.dp.toPx() }
+        var y = 0f
+        while (y < h) {
+            drawLine(
+                color = Color.Black.copy(alpha = 0.08f * peak),
+                start = Offset(0f, y),
+                end = Offset(w, y),
+                strokeWidth = with(density) { 1.dp.toPx() },
+                blendMode = BlendMode.Darken
+            )
+            y += scanlineStep
         }
     }
 }
 
-/** Legacy alias for ParticleMorphOverlay */
+/** Legacy aliases for backwards compatibility */
 @Composable
-fun MorphingBurnOverlay(
-    progress: Float,
-    modifier: Modifier = Modifier
-) = ParticleMorphOverlay(progress = progress, modifier = modifier)
+fun ParticleMorphOverlay(progress: Float, modifier: Modifier = Modifier) =
+    HolographicGlitchOverlay(progress = progress, modifier = modifier)
+
+@Composable
+fun MorphingBurnOverlay(progress: Float, modifier: Modifier = Modifier) =
+    HolographicGlitchOverlay(progress = progress, modifier = modifier)
 
 /**
  * Renders album cover art that morphs and cross-fades smoothly into the next song's
  * cover art during track changes (both auto-crossfade and manual skip/seek), matching
- * convxdemo.mp4 with fluid bottom-to-top reveal, particle morph animation, and chromatic aberration.
+ * convxdemo.mp4 with holographic double-exposure morph and chromatic aberration.
  */
 @Composable
 fun MorphingCoverArt(
@@ -448,20 +389,20 @@ fun MorphingCoverArt(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // LAYER 1 (BASE): Incoming artwork layer — unveiled fluidly from beneath particle cloud!
+        // LAYER 1 (BASE): Incoming artwork layer — expands & resolves into focus!
         val curUrl = currentUrl
         if (!curUrl.isNullOrBlank()) {
             var activeCurUrl by remember(curUrl) { mutableStateOf<String?>(curUrl) }
             val inAlpha = if (outgoingUrl != null && !crossfadeBurnMorph) p.coerceIn(0f, 1f) else 1f
-            val inTranslateY = if (outgoingUrl != null) with(LocalDensity.current) { (18.dp * (1f - p)).toPx() } else 0f
-            val inScale = if (outgoingUrl != null) (0.94f + (0.06f * p)) else 1f
+            val inTranslateY = if (outgoingUrl != null && crossfadeBurnMorph) with(LocalDensity.current) { (12.dp * (1f - p)).toPx() } else 0f
+            val inScale = if (outgoingUrl != null && crossfadeBurnMorph) (0.94f + (0.06f * p)) else 1f
 
             // Chromatic aberration morph effect during track transition (matching convxdemo.mp4)
-            val isMorphing = outgoingUrl != null && p in 0.02f..0.98f
+            val isMorphing = outgoingUrl != null && crossfadeBurnMorph && p in 0.02f..0.98f
             val morphPeak = if (isMorphing) peakIntensity else 0f
-            val chromaticOffsetPx = morphPeak * with(LocalDensity.current) { 8.dp.toPx() }
+            val chromaticOffsetPx = morphPeak * with(LocalDensity.current) { 12.dp.toPx() }
 
-            if (morphPeak > 0.08f) {
+            if (morphPeak > 0.05f) {
                 // Cyan channel shift (left)
                 AsyncImage(
                     model = ImageRequest.Builder(context)
@@ -474,12 +415,12 @@ fun MorphingCoverArt(
                         .build(),
                     contentDescription = null,
                     contentScale = contentScale,
-                    colorFilter = ColorFilter.tint(Color(0xFF00E5FF).copy(alpha = 0.35f * morphPeak), BlendMode.SrcAtop),
+                    colorFilter = ColorFilter.tint(Color(0xFF00E5FF).copy(alpha = 0.45f * morphPeak), BlendMode.Screen),
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            alpha = (inAlpha * 0.7f).coerceIn(0f, 1f)
-                            translationX = -chromaticOffsetPx
+                            alpha = (inAlpha * 0.85f).coerceIn(0f, 1f)
+                            translationX = -chromaticOffsetPx * 0.85f
                             translationY = inTranslateY
                             scaleX = inScale
                             scaleY = inScale
@@ -498,12 +439,12 @@ fun MorphingCoverArt(
                         .build(),
                     contentDescription = null,
                     contentScale = contentScale,
-                    colorFilter = ColorFilter.tint(Color(0xFFFF007F).copy(alpha = 0.35f * morphPeak), BlendMode.SrcAtop),
+                    colorFilter = ColorFilter.tint(Color(0xFFFF007F).copy(alpha = 0.45f * morphPeak), BlendMode.Screen),
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            alpha = (inAlpha * 0.7f).coerceIn(0f, 1f)
-                            translationX = chromaticOffsetPx
+                            alpha = (inAlpha * 0.85f).coerceIn(0f, 1f)
+                            translationX = chromaticOffsetPx * 0.85f
                             translationY = inTranslateY
                             scaleX = inScale
                             scaleY = inScale
@@ -551,18 +492,18 @@ fun MorphingCoverArt(
             }
         }
 
-        // LAYER 2 (TOP): Outgoing artwork layer — dissolves into particles and chromatic aberration!
+        // LAYER 2 (TOP): Outgoing artwork layer — morphs with full chromatic aberration & holographic double-exposure!
         val outUrl = outgoingUrl
         if (!outUrl.isNullOrBlank() && p < 1f) {
             var activeOutUrl by remember(outUrl) { mutableStateOf<String?>(outUrl) }
-            val outAlpha = if (crossfadeBurnMorph) (1f - p * 0.60f).coerceIn(0f, 1f) else (1f - p).coerceIn(0f, 1f)
-            val outScale = 1f + (0.04f * p)
+            val outAlpha = (1f - p).coerceIn(0f, 1f)
+            val outScale = if (crossfadeBurnMorph) 1f + (0.04f * p) else 1f
 
-            val isMorphing = p in 0.02f..0.98f
+            val isMorphing = crossfadeBurnMorph && p in 0.02f..0.98f
             val morphPeak = if (isMorphing) peakIntensity else 0f
-            val chromaticOffsetPx = morphPeak * with(LocalDensity.current) { 8.dp.toPx() }
+            val chromaticOffsetPx = morphPeak * with(LocalDensity.current) { 12.dp.toPx() }
 
-            if (morphPeak > 0.08f) {
+            if (morphPeak > 0.05f) {
                 // Outgoing Cyan channel shift (left)
                 AsyncImage(
                     model = ImageRequest.Builder(context)
@@ -575,11 +516,11 @@ fun MorphingCoverArt(
                         .build(),
                     contentDescription = null,
                     contentScale = contentScale,
-                    colorFilter = ColorFilter.tint(Color(0xFF00E5FF).copy(alpha = 0.35f * morphPeak), BlendMode.SrcAtop),
+                    colorFilter = ColorFilter.tint(Color(0xFF00E5FF).copy(alpha = 0.45f * morphPeak), BlendMode.Screen),
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            alpha = (outAlpha * 0.6f).coerceIn(0f, 1f)
+                            alpha = (outAlpha * 0.85f).coerceIn(0f, 1f)
                             translationX = -chromaticOffsetPx
                             scaleX = outScale
                             scaleY = outScale
@@ -598,11 +539,11 @@ fun MorphingCoverArt(
                         .build(),
                     contentDescription = null,
                     contentScale = contentScale,
-                    colorFilter = ColorFilter.tint(Color(0xFFFF007F).copy(alpha = 0.35f * morphPeak), BlendMode.SrcAtop),
+                    colorFilter = ColorFilter.tint(Color(0xFFFF007F).copy(alpha = 0.45f * morphPeak), BlendMode.Screen),
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            alpha = (outAlpha * 0.6f).coerceIn(0f, 1f)
+                            alpha = (outAlpha * 0.85f).coerceIn(0f, 1f)
                             translationX = chromaticOffsetPx
                             scaleX = outScale
                             scaleY = outScale
@@ -625,29 +566,6 @@ fun MorphingCoverArt(
                 contentScale = contentScale,
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(
-                        if (crossfadeBurnMorph) {
-                            Modifier.drawWithContent {
-                                val burnY = size.height * (1f - p)
-                                // Fluid undulating wave clip boundary
-                                val path = Path().apply {
-                                    moveTo(0f, 0f)
-                                    lineTo(size.width, 0f)
-                                    lineTo(size.width, burnY.coerceIn(0f, size.height))
-                                    val waveSteps = 40
-                                    for (step in waveSteps downTo 0) {
-                                        val x = size.width * (step.toFloat() / waveSteps)
-                                        val wave = kotlin.math.sin((x / size.width * 10.0) + (p * 14.0)).toFloat() * (size.height * 0.022f * peakIntensity)
-                                        lineTo(x, (burnY + wave).coerceIn(0f, size.height))
-                                    }
-                                    close()
-                                }
-                                clipPath(path) {
-                                    this@drawWithContent.drawContent()
-                                }
-                            }
-                        } else Modifier
-                    )
                     .graphicsLayer {
                         alpha = outAlpha
                         scaleX = outScale
@@ -656,9 +574,9 @@ fun MorphingCoverArt(
             )
         }
 
-        // LAYER 3 (OVERLAY): Glowing chromatic particle field & holographic scanlines
+        // LAYER 3 (OVERLAY): Holographic glitch scanlines and prism flare matching convxdemo.mp4
         if (crossfadeBurnMorph && outgoingUrl != null && p in 0.005f..0.995f) {
-            ParticleMorphOverlay(
+            HolographicGlitchOverlay(
                 progress = p,
                 modifier = Modifier.fillMaxSize()
             )
