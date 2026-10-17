@@ -50,6 +50,7 @@ import coil3.compose.AsyncImage
 import coil3.SingletonImageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import coil3.request.allowHardware
 import coil3.request.crossfade
 import coil3.size.Size as CoilSize
 import androidx.media3.common.C
@@ -248,42 +249,6 @@ fun PlayerV2(
     var gradientColors by remember { mutableStateOf<List<Color>>(emptyList()) }
     val gradientColorsCache = remember { mutableMapOf<String, List<Color>>() }
 
-    LaunchedEffect(mediaMetadata?.id, ambientEdgeGlowEnabled) {
-        if (ambientEdgeGlowEnabled) {
-            val currentMetadata = mediaMetadata
-            if (currentMetadata != null && currentMetadata.thumbnailUrl != null) {
-                val cached = gradientColorsCache[currentMetadata.id]
-                if (cached != null) {
-                    gradientColors = cached
-                    return@LaunchedEffect
-                }
-                withContext(Dispatchers.IO) {
-                    val request = ImageRequest.Builder(context)
-                        .data(currentMetadata.thumbnailUrl)
-                        .size(100, 100)
-                        .allowHardware(false)
-                        .build()
-                    val result = runCatching { context.imageLoader.execute(request) }.getOrNull()
-                    if (result != null) {
-                        val bitmap = result.image?.toBitmap()
-                        if (bitmap != null) {
-                            val palette = Palette.from(bitmap)
-                                .maximumColorCount(8)
-                                .resizeBitmapArea(100 * 100)
-                                .generate()
-                            val fallbackColor = PlayerColorExtractor.NeutralFallbackColor.toArgb()
-                            val extracted = PlayerColorExtractor.extractGradientColors(palette, fallbackColor)
-                            gradientColorsCache[currentMetadata.id] = extracted
-                            withContext(Dispatchers.Main) { gradientColors = extracted }
-                        }
-                    }
-                }
-            } else {
-                gradientColors = listOf(adaptivePrimary, adaptiveSecondary)
-            }
-        }
-    }
-
     var showAudioDeviceBottomSheet by remember { mutableStateOf(false) }
     
     val bluetoothDeviceName by produceState<String?>(initialValue = getConnectedBluetoothDeviceName(context)) {
@@ -407,6 +372,42 @@ fun PlayerV2(
         },
         label = "adaptiveSurface"
     )
+
+    LaunchedEffect(mediaMetadata?.id, ambientEdgeGlowEnabled) {
+        if (ambientEdgeGlowEnabled) {
+            val currentMetadata = mediaMetadata
+            if (currentMetadata != null && currentMetadata.thumbnailUrl != null) {
+                val cached = gradientColorsCache[currentMetadata.id]
+                if (cached != null) {
+                    gradientColors = cached
+                    return@LaunchedEffect
+                }
+                withContext(Dispatchers.IO) {
+                    val request = ImageRequest.Builder(context)
+                        .data(currentMetadata.thumbnailUrl)
+                        .size(100, 100)
+                        .allowHardware(false)
+                        .build()
+                    val result = runCatching { context.imageLoader.execute(request) }.getOrNull()
+                    if (result != null) {
+                        val bitmap = result.image?.toBitmap()
+                        if (bitmap != null) {
+                            val palette = Palette.from(bitmap)
+                                .maximumColorCount(8)
+                                .resizeBitmapArea(100 * 100)
+                                .generate()
+                            val fallbackColor = PlayerColorExtractor.NeutralFallbackColor.toArgb()
+                            val extracted = PlayerColorExtractor.extractGradientColors(palette, fallbackColor)
+                            gradientColorsCache[currentMetadata.id] = extracted
+                            withContext(Dispatchers.Main) { gradientColors = extracted }
+                        }
+                    }
+                }
+            } else {
+                gradientColors = listOf(adaptivePrimary, adaptiveSecondary)
+            }
+        }
+    }
 
     Box(
         modifier = modifier

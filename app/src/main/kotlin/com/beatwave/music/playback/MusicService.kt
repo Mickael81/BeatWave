@@ -305,7 +305,7 @@ class MusicService :
         private set//improvement
 
     private var crossfadeEnabled = false
-    private var crossfadeDuration = 5000f
+    var crossfadeDuration = 5000f
     private var crossfadeGapless = true
     var manualCrossfadeEnabled = false
     var manualCrossfadeDuration = 3000f
@@ -508,7 +508,7 @@ class MusicService :
     // All DJ analysis, pre-analysis and transition decisions live here; this
     // service only carries out what it decides. Owns its own coroutine scope,
     // so it survives `scope` being replaced on service restart.
-    private val djEngine: DjEngine by lazy {
+    val djEngine: DjEngine by lazy {
         DjEngine(database) { createExoPlayer(publishAsActive = false) }
     }
 
@@ -4296,14 +4296,14 @@ class MusicService :
         } else null
 
         djMixPlan?.let { plan ->
-            if (plan.tier != com.beatwave.music.playback.dj.DjMixTier.PLAIN_CROSSFADE) {
+            if (plan.tier != DjMixTier.PLAIN_CROSSFADE) {
                 secPlayer.playbackParameters =
                     androidx.media3.common.PlaybackParameters(plan.incomingSpeedAdjustment, plan.incomingPitchAdjustment)
             }
         }
 
         secPlayer.prepare()
-        if (djMixPlan != null && djMixPlan.tier != com.beatwave.music.playback.dj.DjMixTier.PLAIN_CROSSFADE) {
+        if (djMixPlan != null && djMixPlan.tier != DjMixTier.PLAIN_CROSSFADE) {
             djEngine.armIncomingFilter(secPlayer)
             djEngine.startTailEffect(player, transitionDurationMs)
             startIncomingOnBeat(secPlayer, djMixPlan, outgoingMediaId)
