@@ -40,6 +40,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.Path
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Icon
@@ -278,11 +280,12 @@ fun MorphingBurnOverlay(
         // Fluid undulating incandescent core seam across the width
         val wavePoints = 40
         var prevX = 0f
-        var prevY = burnY
+        val startWave = kotlin.math.sin(progress * 14.0).toFloat() * (h * 0.022f * peakIntensity)
+        var prevY = (burnY + startWave).coerceIn(0f, h)
         for (step in 1..wavePoints) {
             val currX = (step.toFloat() / wavePoints) * w
-            val waveOffset = kotlin.math.sin((currX / w * 12.0) + (progress * 18.0)).toFloat() * (h * 0.015f * peakIntensity)
-            val currY = burnY + waveOffset
+            val waveOffset = kotlin.math.sin((currX / w * 10.0) + (progress * 14.0)).toFloat() * (h * 0.022f * peakIntensity)
+            val currY = (burnY + waveOffset).coerceIn(0f, h)
             drawLine(
                 color = Color(0xFFFFFFFF).copy(alpha = 0.90f * peakIntensity),
                 start = Offset(prevX, prevY),
@@ -353,13 +356,19 @@ fun MorphingCoverArt(
     val progress = remember { Animatable(1f) }
 
     // Start morphing animation IMMEDIATELY as soon as song starts crossfading or track changes
-    LaunchedEffect(artworkUri, isCrossfading) {
-        if (artworkUri != currentUrl && artworkUri != null) {
-            if (currentUrl != null) {
-                outgoingUrl = currentUrl
+    LaunchedEffect(artworkUri) {
+        val targetUri = artworkUri
+        if (targetUri != currentUrl) {
+            val oldUrl = currentUrl
+            if (oldUrl != null && targetUri != null) {
+                // Immediately swap URLs so:
+                // - outgoingUrl holds the OLD song art (Song A)
+                // - currentUrl holds the NEW incoming song art (Song B)
+                outgoingUrl = oldUrl
+                currentUrl = targetUri
                 progress.snapTo(0f)
                 val effectiveDuration = if (isCrossfading) {
-                    crossfadeDurationMs.toInt().coerceAtLeast(1000)
+                    crossfadeDurationMs.toInt().coerceAtLeast(1200)
                 } else {
                     animationDurationMillis
                 }
@@ -367,12 +376,13 @@ fun MorphingCoverArt(
                     targetValue = 1f,
                     animationSpec = tween(
                         durationMillis = effectiveDuration,
-                        easing = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1.0f)
+                        easing = CubicBezierEasing(0.33f, 0.0f, 0.20f, 1.0f)
                     )
                 )
                 outgoingUrl = null
+            } else {
+                currentUrl = targetUri
             }
-            currentUrl = artworkUri
         }
     }
 
@@ -381,13 +391,14 @@ fun MorphingCoverArt(
         if (!isCrossfading && progress.value in 0.01f..0.99f) {
             progress.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
             )
             outgoingUrl = null
         }
     }
 
     val p = progress.value
+    val peakIntensity = kotlin.math.sin(p * Math.PI.toFloat())
 
     Box(
         modifier = modifier.fillMaxSize(),
@@ -398,12 +409,12 @@ fun MorphingCoverArt(
         if (!curUrl.isNullOrBlank()) {
             var activeCurUrl by remember(curUrl) { mutableStateOf<String?>(curUrl) }
             val inAlpha = if (outgoingUrl != null && !crossfadeBurnMorph) p.coerceIn(0f, 1f) else 1f
-            val inTranslateY = if (outgoingUrl != null) with(LocalDensity.current) { (16.dp * (1f - p)).toPx() } else 0f
+            val inTranslateY = if (outgoingUrl != null) with(LocalDensity.current) { (20.dp * (1f - p)).toPx() } else 0f
             val inScale = if (outgoingUrl != null) (0.95f + (0.05f * p)) else 1f
 
             // Chromatic aberration morph effect during track transition (matching convxdemo.mp4)
             val isMorphing = outgoingUrl != null && p in 0.02f..0.98f
-            val morphPeak = if (isMorphing) kotlin.math.sin(p * Math.PI.toFloat()) else 0f
+            val morphPeak = if (isMorphing) peakIntensity else 0f
             val chromaticOffsetPx = morphPeak * with(LocalDensity.current) { 6.dp.toPx() }
 
             if (morphPeak > 0.08f) {
@@ -521,25 +532,33 @@ fun MorphingCoverArt(
                         if (crossfadeBurnMorph) {
                             Modifier.drawWithContent {
                                 val burnY = size.height * (1f - p)
-                                clipRect(
-                                    left = 0f,
-                                    top = 0f,
-                                    right = size.width,
-                                    bottom = burnY
-                                ) {
+                                // Fluid undulating wave clip boundary
+                                val path = Path().apply {
+                                    moveTo(0f, 0f)
+                                    lineTo(size.width, 0f)
+                                    lineTo(size.width, burnY.coerceIn(0f, size.height))
+                                    val waveSteps = 40
+                                    for (step in waveSteps downTo 0) {
+                                        val x = size.width * (step.toFloat() / waveSteps)
+                                        val wave = kotlin.math.sin((x / size.width * 10.0) + (p * 14.0)).toFloat() * (size.height * 0.022f * peakIntensity)
+                                        lineTo(x, (burnY + wave).coerceIn(0f, size.height))
+                                    }
+                                    close()
+                                }
+                                clipPath(path) {
                                     this@drawWithContent.drawContent()
                                 }
 
-                                // Glowing charred disintegration edge along bottom cut
+                                // Glowing charred disintegration edge along the fluid wave cut
                                 if (burnY in 0f..size.height) {
-                                    val charHeight = (size.height * 0.10f).coerceAtLeast(16.dp.toPx())
+                                    val charHeight = (size.height * 0.12f).coerceAtLeast(18.dp.toPx())
                                     drawRect(
                                         brush = Brush.verticalGradient(
                                             colors = listOf(
                                                 Color.Transparent,
                                                 Color(0xEE1C0500),
-                                                Color(0xFFE65100).copy(alpha = 0.85f),
-                                                Color(0xFFFFD54F)
+                                                Color(0xFFE65100).copy(alpha = 0.85f * peakIntensity),
+                                                Color(0xFFFFD54F).copy(alpha = 0.90f * peakIntensity)
                                             ),
                                             startY = (burnY - charHeight).coerceAtLeast(0f),
                                             endY = burnY
