@@ -126,6 +126,10 @@ class DjEngine(
     var activeStyle: TransitionStyle = TransitionStyle.TRANSPARENT
         private set
 
+    /** Optional explicit style override requested by the DJ Console. */
+    @Volatile
+    var overrideStyle: TransitionStyle? = null
+
     private val _state = MutableStateFlow(DjState())
     val state: StateFlow<DjState> = _state.asStateFlow()
 
@@ -173,19 +177,63 @@ class DjEngine(
      */
     fun driveFilterSweep(outgoing: Player?, incoming: Player?, progress: Float) {
         val plan = activePlan ?: return
-        if (plan.tier != DjMixTier.FULL_DJ) return
+        if (plan.tier != DjMixTier.FULL_DJ && overrideStyle == null) return
         val eased = progress.coerceIn(0f, 1f)
 
-        filterFor(outgoing)?.lowPassHz = logLerp(
-            DjFilterAudioProcessor.OPEN_LOW_PASS_HZ,
-            DjFilterAudioProcessor.BASS_KILL_LOW_PASS_HZ,
-            eased,
-        )
-        filterFor(incoming)?.highPassHz = logLerp(
-            DjFilterAudioProcessor.BASS_KILL_HIGH_PASS_HZ,
-            DjFilterAudioProcessor.OPEN_HIGH_PASS_HZ,
-            eased,
-        )
+        when (activeStyle) {
+            TransitionStyle.FILTER_SWEEP -> {
+                // Outgoing HPF sweeps up into highs (club build-up)
+                filterFor(outgoing)?.highPassHz = logLerp(
+                    DjFilterAudioProcessor.OPEN_HIGH_PASS_HZ,
+                    2500f,
+                    eased,
+                )
+                // Incoming opens down from mid-highs into full punchy bass
+                filterFor(incoming)?.highPassHz = logLerp(
+                    600f,
+                    DjFilterAudioProcessor.OPEN_HIGH_PASS_HZ,
+                    eased,
+                )
+            }
+            TransitionStyle.BASS_DROP -> {
+                if (eased >= 0.45f) {
+                    filterFor(outgoing)?.lowPassHz = DjFilterAudioProcessor.BASS_KILL_LOW_PASS_HZ
+                    filterFor(incoming)?.highPassHz = DjFilterAudioProcessor.OPEN_HIGH_PASS_HZ
+                } else {
+                    filterFor(outgoing)?.lowPassHz = DjFilterAudioProcessor.OPEN_LOW_PASS_HZ
+                    filterFor(incoming)?.highPassHz = DjFilterAudioProcessor.BASS_KILL_HIGH_PASS_HZ
+                }
+            }
+            TransitionStyle.VOCAL_SWAP -> {
+                filterFor(outgoing)?.highPassHz = logLerp(
+                    DjFilterAudioProcessor.OPEN_HIGH_PASS_HZ,
+                    280f,
+                    eased,
+                )
+                filterFor(outgoing)?.lowPassHz = logLerp(
+                    DjFilterAudioProcessor.OPEN_LOW_PASS_HZ,
+                    4000f,
+                    eased,
+                )
+                filterFor(incoming)?.highPassHz = logLerp(
+                    DjFilterAudioProcessor.BASS_KILL_HIGH_PASS_HZ,
+                    DjFilterAudioProcessor.OPEN_HIGH_PASS_HZ,
+                    eased,
+                )
+            }
+            else -> {
+                filterFor(outgoing)?.lowPassHz = logLerp(
+                    DjFilterAudioProcessor.OPEN_LOW_PASS_HZ,
+                    DjFilterAudioProcessor.BASS_KILL_LOW_PASS_HZ,
+                    eased,
+                )
+                filterFor(incoming)?.highPassHz = logLerp(
+                    DjFilterAudioProcessor.BASS_KILL_HIGH_PASS_HZ,
+                    DjFilterAudioProcessor.OPEN_HIGH_PASS_HZ,
+                    eased,
+                )
+            }
+        }
     }
 
     /** Puts the incoming player's filter where the sweep starts, before it
@@ -419,7 +467,7 @@ class DjEngine(
         val incoming = analysisFor(incomingMediaId)
         val plan = DjMixPlanner.plan(outgoing?.grid, incoming?.grid, outgoing?.key, incoming?.key)
         activePlan = plan
-        activeStyle = TransitionSelector.select(
+        activeStyle = overrideStyle ?: TransitionSelector.select(
             tier = plan.tier,
             outgoing = outgoing,
             incoming = incoming,
@@ -483,6 +531,8 @@ class DjEngine(
                     echo.frozen = true
                 }
             }
+
+            else -> Unit
         }
     }
 
@@ -509,6 +559,7 @@ class DjEngine(
         while (recentStyles.size > STYLE_HISTORY) recentStyles.removeLast()
         activePlan = null
         activeStyle = TransitionStyle.TRANSPARENT
+        overrideStyle = null
     }
 
     /** Keeps the readout honest when the feature is toggled at runtime. */

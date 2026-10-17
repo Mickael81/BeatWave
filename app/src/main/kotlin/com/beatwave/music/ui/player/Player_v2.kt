@@ -106,6 +106,7 @@ import com.beatwave.music.constants.AmbientEdgeGlowEnabledKey
 import com.beatwave.music.constants.AmbientEdgeGlowIntensityKey
 import com.beatwave.music.ui.component.AmbientEdgeGlow
 import com.beatwave.music.playback.DynamicMashupController
+import com.beatwave.music.playback.DjConsoleController
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import coil3.toBitmap
 import coil3.imageLoader
@@ -116,6 +117,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.beatwave.music.ui.component.DynamicMashupDialog
+import com.beatwave.music.ui.component.DjConsoleDialog
 import android.widget.Toast
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ButtonDefaults
@@ -596,7 +598,7 @@ fun PlayerV2(
                                             DjReadout()
                                             Surface(
                                                 shape = RoundedCornerShape(12.dp),
-                                                color = if (DynamicMashupController.isActive) MaterialTheme.colorScheme.primaryContainer else adaptivePrimary.copy(alpha = 0.12f),
+                                                color = if (DjConsoleController.isActive) MaterialTheme.colorScheme.primaryContainer else adaptivePrimary.copy(alpha = 0.12f),
                                                 modifier = Modifier.clickable { showDynamicMashupDialog = true }
                                             ) {
                                                 Row(
@@ -605,16 +607,16 @@ fun PlayerV2(
                                                 ) {
                                                     Icon(
                                                         painter = painterResource(R.drawable.equalizer),
-                                                        contentDescription = "DJ Song Mashup Studio",
-                                                        tint = if (DynamicMashupController.isActive) MaterialTheme.colorScheme.primary else adaptivePrimary,
+                                                        contentDescription = "DJ Console",
+                                                        tint = if (DjConsoleController.isActive) MaterialTheme.colorScheme.primary else adaptivePrimary,
                                                         modifier = Modifier.size(13.dp)
                                                     )
                                                     Spacer(modifier = Modifier.width(4.dp))
                                                     Text(
-                                                        text = if (DynamicMashupController.isActive) "DJ ON" else "DJ Mix",
+                                                        text = if (DjConsoleController.isActive) "DJ LIVE" else "DJ Console",
                                                         style = MaterialTheme.typography.labelSmall,
                                                         fontWeight = FontWeight.Bold,
-                                                        color = if (DynamicMashupController.isActive) MaterialTheme.colorScheme.primary else adaptivePrimary,
+                                                        color = if (DjConsoleController.isActive) MaterialTheme.colorScheme.primary else adaptivePrimary,
                                                         fontSize = 10.sp
                                                     )
                                                 }
@@ -950,8 +952,8 @@ fun PlayerV2(
                             )
                             .padding(horizontal = 24.dp)
                     ) {
-                        // Live DJ Mashup Deck Banner
-                        if (DynamicMashupController.isActive) {
+                        // Live DJ Console Deck Banner
+                        if (DjConsoleController.isActive) {
                             Surface(
                                 shape = RoundedCornerShape(14.dp),
                                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
@@ -991,14 +993,14 @@ fun PlayerV2(
                                         Column {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Text(
-                                                    text = "DJ MASHUP LIVE",
+                                                    text = "DJ CONSOLE LIVE",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     fontWeight = FontWeight.ExtraBold,
                                                     color = MaterialTheme.colorScheme.primary
                                                 )
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text(
-                                                    text = "• ${DynamicMashupController.currentStyle.title}",
+                                                    text = "• ${DjConsoleController.selectedEffect.title}",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                                                     maxLines = 1,
@@ -1006,7 +1008,7 @@ fun PlayerV2(
                                                 )
                                             }
                                             Text(
-                                                text = "Next swap in ${DynamicMashupController.secondsRemaining}s • Swaps: ${DynamicMashupController.totalSwaps}",
+                                                text = "Next swap in ${DjConsoleController.secondsRemaining}s • Swaps: ${DjConsoleController.totalSwaps}",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 fontSize = 11.sp,
                                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
@@ -1019,22 +1021,22 @@ fun PlayerV2(
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         FilledTonalButton(
-                                            onClick = { DynamicMashupController.triggerImmediateCut() },
+                                            onClick = { DjConsoleController.triggerImmediateCut() },
                                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
                                             modifier = Modifier.height(30.dp)
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.sparks),
-                                                contentDescription = "Cut Now",
+                                                contentDescription = "Transition Now",
                                                 modifier = Modifier.size(13.dp)
                                             )
                                             Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Cut Now", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                            Text("Drop", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                         }
                                         Button(
                                             onClick = {
-                                                DynamicMashupController.stopMashup()
-                                                Toast.makeText(context, "DJ Mashup stopped", Toast.LENGTH_SHORT).show()
+                                                DjConsoleController.stopDjConsole()
+                                                Toast.makeText(context, "DJ Console stopped", Toast.LENGTH_SHORT).show()
                                             },
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = MaterialTheme.colorScheme.error,
@@ -1045,7 +1047,7 @@ fun PlayerV2(
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.close),
-                                                contentDescription = "Stop Mashup",
+                                                contentDescription = "Stop DJ",
                                                 modifier = Modifier.size(13.dp)
                                             )
                                             Spacer(modifier = Modifier.width(4.dp))
@@ -1328,7 +1330,7 @@ fun PlayerV2(
 
         val currentMeta = mediaMetadata
         if (showDynamicMashupDialog && currentMeta != null) {
-            DynamicMashupDialog(
+            DjConsoleDialog(
                 initialSong = currentMeta,
                 onDismiss = { showDynamicMashupDialog = false }
             )

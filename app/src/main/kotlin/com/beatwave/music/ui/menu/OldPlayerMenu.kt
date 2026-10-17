@@ -294,7 +294,7 @@ fun OldPlayerMenu(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        text = "DJ Mashup",
+                        text = "DJ Console",
                         onClick = { showDynamicMashupDialog = true }
                     ),
                     NewAction(
@@ -732,8 +732,8 @@ fun OldPlayerMenu(
                     )
                     add(
                         Material3MenuItemData(
-                            title = { Text(text = "🎧 DJ Song Mashup Studio") },
-                            description = { Text(text = "Real-time AI mixing & blending with up to 4 tracks") },
+                            title = { Text(text = "🎛️ DJ Console") },
+                            description = { Text(text = "Real-time DJ transitions & twin-deck mixing") },
                             icon = {
                                 Icon(
                                     painter = painterResource(R.drawable.equalizer),

@@ -310,13 +310,13 @@ fun PlayerMenu(
                             Spacer(modifier = Modifier.width(8.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Dynamic Mashup Active",
+                                    text = "DJ Console Live",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = "${com.beatwave.music.playback.DynamicMashupController.currentStyle.title} • Next verse in ${com.beatwave.music.playback.DynamicMashupController.secondsRemaining}s",
+                                    text = "${com.beatwave.music.playback.DynamicMashupController.currentStyle.title} • Next transition in ${com.beatwave.music.playback.DynamicMashupController.secondsRemaining}s",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -355,7 +355,7 @@ fun PlayerMenu(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Swap Verse Now",
+                                    text = "Transition Now",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -376,7 +376,7 @@ fun PlayerMenu(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Stop Mashup",
+                                    text = "Stop DJ",
                                     style = MaterialTheme.typography.labelSmall
                                 )
                             }
@@ -414,13 +414,13 @@ fun PlayerMenu(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "🎧 DJ Song Mashup Studio",
+                                text = "🎛️ DJ Console",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "Mix & blend this song with other tracks in real time",
+                                text = "Real-time DJ transitions & twin-deck mixing studio",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -536,7 +536,7 @@ fun PlayerMenu(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        text = "DJ Mashup",
+                        text = "DJ Console",
                         onClick = { showDynamicMashupDialog = true }
                     ),
                     NewAction(
@@ -951,8 +951,8 @@ fun PlayerMenu(
                         )
                         add(
                             Material3MenuItemData(
-                                title = { Text(text = "🎧 DJ Song Mashup Studio") },
-                                description = { Text(text = "Real-time AI mixing & blending with up to 4 tracks") },
+                                title = { Text(text = "🎛️ DJ Console") },
+                                description = { Text(text = "Real-time DJ transitions & twin-deck mixing") },
                                 icon = {
                                     Icon(
                                         painter = painterResource(R.drawable.equalizer),

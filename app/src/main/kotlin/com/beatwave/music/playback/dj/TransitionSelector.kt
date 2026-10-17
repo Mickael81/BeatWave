@@ -8,16 +8,30 @@ package com.beatwave.music.playback.dj
 import com.beatwave.music.playback.audio.DjMixTier
 
 /** What a transition actually does, beyond the volume fade. */
-enum class TransitionStyle {
-    /** Nothing but the beatmatch, tempo lock and bass swap. The listener should
-     *  not be able to tell where one track ended. */
-    TRANSPARENT,
+enum class TransitionStyle(
+    val title: String = "Harmonic Blend",
+    val subtitle: String = "Seamless key and tempo locked blend",
+) {
+    /** Nothing but the beatmatch, tempo lock and bass swap. */
+    TRANSPARENT("Harmonic Blend", "Seamless key and tempo locked harmonic blend"),
 
-    /** Cut the outgoing track into a delay line and let the tail ring out. */
-    ECHO_FREEZE,
+    /** Synchronized bar/phrase swap that drops on the 1-beat. */
+    BEAT_SWAP("Beat Swap", "Quantized phrase swap on master beat boundary"),
+
+    /** Vocal hook swap: isolates vocal frequencies and cuts to incoming hook. */
+    VOCAL_SWAP("Vocal Swap", "Lead vocal and melody swap over active rhythm"),
+
+    /** Resonant high-pass filter riser into drop. */
+    FILTER_SWEEP("Filter Sweep", "Dramatic resonant high-pass club riser into drop"),
+
+    /** Kills sub-bass on outgoing track and drops heavy bass on incoming beat. */
+    BASS_DROP("Bass Drop", "Sub-bass kill on Deck A and bass slam on Deck B"),
 
     /** Brake the outgoing track to a standstill, pitch falling with it. */
-    TAPE_STOP,
+    TAPE_STOP("Vinyl Brake", "Turntable brake slowing outgoing track to standstill"),
+
+    /** Cut the outgoing track into a delay line and let the tail ring out. */
+    ECHO_FREEZE("Echo Freeze", "Dub delay tail freeze dissolving into the next track"),
 }
 
 /**

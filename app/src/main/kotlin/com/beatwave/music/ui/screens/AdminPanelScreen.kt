@@ -47,7 +47,7 @@ fun AdminPanelScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Publish Update", "Publish News", "DJ Mashup Studio", "Test Wrapped", "Suggestions", "Bug Reports")
+    val tabs = listOf("Publish Update", "Publish News", "DJ Console", "Test Wrapped", "Suggestions", "Bug Reports")
 
     Scaffold(
         topBar = {
@@ -1144,7 +1144,7 @@ fun DjMashupStudioTab(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "🎛️ DJ Mashup Studio — AI DJ Engine",
+                    text = "🎛️ DJ Console — Live Twin-Deck & Transition Engine",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer

@@ -4259,12 +4259,17 @@ class MusicService :
         targetIndex: Int,
         startPositionMs: Long = 0L,
         transitionDurationMs: Long = manualCrossfadeDuration.toLong(),
+        forcedStyle: com.beatwave.music.playback.dj.TransitionStyle? = null,
     ) {
         if (isCrossfading) {
             player.seekTo(targetIndex, startPositionMs)
             return
         }
         if (targetIndex < 0 || targetIndex >= player.mediaItemCount) return
+
+        if (forcedStyle != null) {
+            djEngine.overrideStyle = forcedStyle
+        }
 
         val savedRepeatMode = player.repeatMode
         val savedShuffleEnabled = player.shuffleModeEnabled
@@ -4288,7 +4293,7 @@ class MusicService :
 
         val outgoingMediaId = player.currentMediaItem?.mediaId
         val incomingMediaId = player.getMediaItemAt(targetIndex).mediaId
-        val djMixPlan = if (djEngine.enabled) {
+        val djMixPlan = if (djEngine.enabled || forcedStyle != null) {
             outgoingMediaId?.let { djEngine.captureEnergyProfile(player, it) }
             djEngine.planTransition(
                 outgoingMediaId,
@@ -4305,7 +4310,7 @@ class MusicService :
         }
 
         secPlayer.prepare()
-        if (djMixPlan != null && djMixPlan.tier != DjMixTier.PLAIN_CROSSFADE) {
+        if (djMixPlan != null && (djMixPlan.tier != DjMixTier.PLAIN_CROSSFADE || forcedStyle != null)) {
             djEngine.armIncomingFilter(secPlayer)
             djEngine.startTailEffect(player, transitionDurationMs)
             startIncomingOnBeat(secPlayer, djMixPlan, outgoingMediaId)
