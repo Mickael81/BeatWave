@@ -80,64 +80,64 @@ fun AmbientEdgeGlow(
         modifier = modifier
             .fillMaxSize()
             .drawBehind {
-                val baseAlpha = (intensity * pulseProgress * 0.45f).coerceIn(0f, 1f)
-                val edgeGlowDepth = size.minDimension * 0.18f * (0.85f + pulseProgress * 0.25f)
-                val glowWidth = edgeGlowDepth.coerceAtLeast(32f)
+                val baseAlpha = (intensity * pulseProgress * 0.68f).coerceIn(0.22f, 0.95f)
+                val edgeGlowDepth = size.minDimension * 0.24f * (0.85f + pulseProgress * 0.25f)
+                val glowWidth = edgeGlowDepth.coerceAtLeast(42f)
 
                 val c1 = safeColors[0].copy(alpha = baseAlpha)
-                val c2 = safeColors[1 % safeColors.size].copy(alpha = baseAlpha * 0.85f)
-                val c3 = safeColors.getOrElse(2) { safeColors[0] }.copy(alpha = baseAlpha * 0.7f)
+                val c2 = safeColors[1 % safeColors.size].copy(alpha = baseAlpha * 0.90f)
+                val c3 = safeColors.getOrElse(2) { safeColors[0] }.copy(alpha = baseAlpha * 0.75f)
                 val transparent = Color.Transparent
 
                 // Top Edge Glow
                 drawRect(
                     brush = Brush.verticalGradient(
-                        colors = listOf(c1, c2.copy(alpha = c2.alpha * 0.4f), transparent),
+                        colors = listOf(c1, c2.copy(alpha = c2.alpha * 0.5f), transparent),
                         startY = 0f,
-                        endY = glowWidth * 1.2f
+                        endY = glowWidth * 1.35f
                     ),
                     topLeft = Offset.Zero,
-                    size = Size(size.width, glowWidth * 1.2f)
+                    size = Size(size.width, glowWidth * 1.35f)
                 )
 
                 // Bottom Edge Glow
                 drawRect(
                     brush = Brush.verticalGradient(
-                        colors = listOf(transparent, c3.copy(alpha = c3.alpha * 0.4f), c2),
-                        startY = size.height - glowWidth * 1.2f,
+                        colors = listOf(transparent, c3.copy(alpha = c3.alpha * 0.5f), c2),
+                        startY = size.height - glowWidth * 1.35f,
                         endY = size.height
                     ),
-                    topLeft = Offset(0f, size.height - glowWidth * 1.2f),
-                    size = Size(size.width, glowWidth * 1.2f)
+                    topLeft = Offset(0f, size.height - glowWidth * 1.35f),
+                    size = Size(size.width, glowWidth * 1.35f)
                 )
 
                 // Left Edge Glow
                 drawRect(
                     brush = Brush.horizontalGradient(
-                        colors = listOf(c2, c1.copy(alpha = c1.alpha * 0.3f), transparent),
+                        colors = listOf(c2, c1.copy(alpha = c1.alpha * 0.45f), transparent),
                         startX = 0f,
-                        endX = glowWidth
+                        endX = glowWidth * 1.15f
                     ),
                     topLeft = Offset.Zero,
-                    size = Size(glowWidth, size.height)
+                    size = Size(glowWidth * 1.15f, size.height)
                 )
 
                 // Right Edge Glow
                 drawRect(
                     brush = Brush.horizontalGradient(
-                        colors = listOf(transparent, c3.copy(alpha = c3.alpha * 0.3f), c1),
-                        startX = size.width - glowWidth,
+                        colors = listOf(transparent, c3.copy(alpha = c3.alpha * 0.45f), c1),
+                        startX = size.width - glowWidth * 1.15f,
                         endX = size.width
                     ),
-                    topLeft = Offset(size.width - glowWidth, 0f),
-                    size = Size(glowWidth, size.height)
+                    topLeft = Offset(size.width - glowWidth * 1.15f, 0f),
+                    size = Size(glowWidth * 1.15f, size.height)
                 )
 
-                // Corner blooms for organic fluid effect
-                drawCornerBloom(c1, Offset(0f, 0f), glowWidth * 1.8f)
-                drawCornerBloom(c2, Offset(size.width, 0f), glowWidth * 1.8f)
-                drawCornerBloom(c3, Offset(0f, size.height), glowWidth * 1.8f)
-                drawCornerBloom(c1, Offset(size.width, size.height), glowWidth * 1.8f)
+                // Corner blooms for organic fluid ambient glow
+                drawCornerBloom(c1, Offset(0f, 0f), glowWidth * 2.0f)
+                drawCornerBloom(c2, Offset(size.width, 0f), glowWidth * 2.0f)
+                drawCornerBloom(c3, Offset(0f, size.height), glowWidth * 2.0f)
+                drawCornerBloom(c1, Offset(size.width, size.height), glowWidth * 2.0f)
             }
     )
 }
@@ -145,7 +145,12 @@ fun AmbientEdgeGlow(
 private fun DrawScope.drawCornerBloom(color: Color, center: Offset, radius: Float) {
     drawCircle(
         brush = Brush.radialGradient(
-            colors = listOf(color, color.copy(alpha = color.alpha * 0.3f), Color.Transparent),
+            colors = listOf(
+                color,
+                color.copy(alpha = color.alpha * 0.5f),
+                color.copy(alpha = color.alpha * 0.15f),
+                Color.Transparent
+            ),
             center = center,
             radius = radius
         ),

@@ -63,7 +63,6 @@ import com.beatwave.music.constants.PlayerThumbnailShadowElevationKey
 import com.beatwave.music.constants.EnableGoogleCastKey
 import com.beatwave.music.models.MediaMetadata
 import com.beatwave.music.ui.component.BottomSheetState
-import com.beatwave.music.ui.component.DjReadout
 import com.beatwave.music.ui.component.PlayerSliderTrack
 import androidx.compose.ui.text.style.TextAlign
 import com.beatwave.music.ui.theme.PlayerSliderColors
@@ -105,8 +104,7 @@ import kotlinx.coroutines.launch
 import com.beatwave.music.constants.AmbientEdgeGlowEnabledKey
 import com.beatwave.music.constants.AmbientEdgeGlowIntensityKey
 import com.beatwave.music.ui.component.AmbientEdgeGlow
-import com.beatwave.music.playback.DynamicMashupController
-import com.beatwave.music.playback.DjConsoleController
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import coil3.toBitmap
 import coil3.imageLoader
@@ -115,13 +113,7 @@ import com.beatwave.music.ui.theme.PlayerColorExtractor
 import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.compose.runtime.saveable.rememberSaveable
-import com.beatwave.music.ui.component.DynamicMashupDialog
-import com.beatwave.music.ui.component.DjConsoleDialog
 import android.widget.Toast
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Button
 
 enum class PlayerInternalState { COVER, LYRICS, QUEUE }
 
@@ -252,13 +244,12 @@ fun PlayerV2(
     val (showUpNext) = rememberPreference(ShowUpNextKey, defaultValue = false)
     val diyLayout = rememberDiyLayout()
 
-    val ambientEdgeGlowEnabled by rememberPreference(AmbientEdgeGlowEnabledKey, defaultValue = false)
+    val ambientEdgeGlowEnabled by rememberPreference(AmbientEdgeGlowEnabledKey, defaultValue = true)
     val ambientEdgeGlowIntensity by rememberPreference(AmbientEdgeGlowIntensityKey, defaultValue = 0.85f)
     var gradientColors by remember { mutableStateOf<List<Color>>(emptyList()) }
     val gradientColorsCache = remember { mutableMapOf<String, List<Color>>() }
 
     var showAudioDeviceBottomSheet by remember { mutableStateOf(false) }
-    var showDynamicMashupDialog by rememberSaveable { mutableStateOf(false) }
     
     val bluetoothDeviceName by produceState<String?>(initialValue = getConnectedBluetoothDeviceName(context)) {
         val am = context.getSystemService(android.content.Context.AUDIO_SERVICE) as AudioManager
@@ -450,21 +441,154 @@ fun PlayerV2(
                 .padding(top = WindowInsets.systemBars.asPaddingValues().calculateTopPadding())
                 .padding(bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding())
         ) {
-            // Minimal drag handle header
+            // Modern Player Header: Collapse Action, Segmented View Switcher, and More Menu
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.Center
+                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
+                // Left: Collapse down button
+                IconButton(
+                    onClick = { state.collapseSoft() },
                     modifier = Modifier
-                        .width(48.dp)
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(adaptivePrimary.copy(alpha = 0.3f))
-                        .clickable { state.collapseSoft() }
-                )
+                        .size(38.dp)
+                        .background(adaptivePrimary.copy(alpha = 0.10f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Collapse Player",
+                        tint = adaptivePrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // Center: 3-Way Modern Segmented Switcher [ Cover | Lyrics | Queue ]
+                Surface(
+                    shape = RoundedCornerShape(22.dp),
+                    color = adaptivePrimary.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, adaptivePrimary.copy(alpha = 0.14f)),
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(3.dp)
+                    ) {
+                        // Cover Tab
+                        val isCoverSelected = playerState == PlayerInternalState.COVER
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(if (isCoverSelected) adaptivePrimary.copy(alpha = 0.22f) else Color.Transparent)
+                                .clickable { playerState = PlayerInternalState.COVER }
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(R.drawable.album),
+                                    contentDescription = "Cover",
+                                    tint = if (isCoverSelected) adaptivePrimary else adaptiveSecondary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Cover",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (isCoverSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isCoverSelected) adaptivePrimary else adaptiveSecondary
+                                )
+                            }
+                        }
+
+                        // Lyrics Tab
+                        val isLyricsSelected = playerState == PlayerInternalState.LYRICS
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(if (isLyricsSelected) adaptivePrimary.copy(alpha = 0.22f) else Color.Transparent)
+                                .clickable { playerState = PlayerInternalState.LYRICS }
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(R.drawable.apple_lyrics),
+                                    contentDescription = "Lyrics",
+                                    tint = if (isLyricsSelected) adaptivePrimary else adaptiveSecondary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Lyrics",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (isLyricsSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isLyricsSelected) adaptivePrimary else adaptiveSecondary
+                                )
+                            }
+                        }
+
+                        // Queue Tab
+                        val isQueueSelected = playerState == PlayerInternalState.QUEUE
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(if (isQueueSelected) adaptivePrimary.copy(alpha = 0.22f) else Color.Transparent)
+                                .clickable { playerState = PlayerInternalState.QUEUE }
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(R.drawable.apple_queue),
+                                    contentDescription = "Queue",
+                                    tint = if (isQueueSelected) adaptivePrimary else adaptiveSecondary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Queue",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (isQueueSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isQueueSelected) adaptivePrimary else adaptiveSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Right: Player Menu Action
+                IconButton(
+                    onClick = {
+                        menuState.show {
+                            PlayerMenu(
+                                mediaMetadata = mediaMetadata,
+                                navController = navController,
+                                playerBottomSheetState = state,
+                                onShowDetailsDialog = {
+                                    mediaMetadata?.id?.let {
+                                        bottomSheetPageState.show {
+                                            ShowMediaInfo(it)
+                                        }
+                                    }
+                                },
+                                onDismiss = menuState::dismiss
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .size(38.dp)
+                        .background(adaptivePrimary.copy(alpha = 0.10f), CircleShape)
+                ) {
+                    PlayerGlyph(
+                        slot = PlayerIconSlot.V2_MORE,
+                        fallback = R.drawable.more_horiz,
+                        tint = adaptivePrimary,
+                        modifier = Modifier.size(20.dp),
+                        contentDescription = "Menu"
+                    )
+                }
             }
 
             // Morphing Content Area (Cover vs Lyrics vs Queue)
@@ -590,37 +714,16 @@ fun PlayerV2(
                                                 mediaMetadata?.artists?.firstOrNull()?.id?.let { navController.navigate("artist/$it") }
                                             }
                                         )
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            modifier = Modifier.padding(top = 2.dp)
-                                        ) {
-                                            DjReadout()
-                                            Surface(
-                                                shape = RoundedCornerShape(12.dp),
-                                                color = if (DjConsoleController.isActive) MaterialTheme.colorScheme.primaryContainer else adaptivePrimary.copy(alpha = 0.12f),
-                                                modifier = Modifier.clickable { showDynamicMashupDialog = true }
-                                            ) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                                ) {
-                                                    Icon(
-                                                        painter = painterResource(R.drawable.equalizer),
-                                                        contentDescription = "DJ Console",
-                                                        tint = if (DjConsoleController.isActive) MaterialTheme.colorScheme.primary else adaptivePrimary,
-                                                        modifier = Modifier.size(13.dp)
-                                                    )
-                                                    Spacer(modifier = Modifier.width(4.dp))
-                                                    Text(
-                                                        text = if (DjConsoleController.isActive) "DJ LIVE" else "DJ Console",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = if (DjConsoleController.isActive) MaterialTheme.colorScheme.primary else adaptivePrimary,
-                                                        fontSize = 10.sp
-                                                    )
-                                                }
-                                            }
+                                        val albumTitle = mediaMetadata?.album?.title
+                                        if (!albumTitle.isNullOrBlank()) {
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                albumTitle,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = adaptiveSecondary.copy(alpha = 0.70f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
                                         }
                                     }
 
@@ -713,6 +816,7 @@ fun PlayerV2(
                                             )
                                             .background(adaptiveSurface, RoundedCornerShape(8.dp))
                                             .clip(RoundedCornerShape(8.dp))
+                                            .clickable { playerState = PlayerInternalState.COVER }
                                     ) {
                                         MorphingCoverArt(
                                             artworkUri = mediaMetadata?.thumbnailUrl?.resize(1200, 1200),
@@ -952,111 +1056,7 @@ fun PlayerV2(
                             )
                             .padding(horizontal = 24.dp)
                     ) {
-                        // Live DJ Console Deck Banner
-                        if (DjConsoleController.isActive) {
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 8.dp)
-                                    .clickable { showDynamicMashupDialog = true }
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.weight(1f, fill = false)
-                                    ) {
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(32.dp)
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Icon(
-                                                    painter = painterResource(R.drawable.equalizer),
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.width(10.dp))
-                                        Column {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(
-                                                    text = "DJ CONSOLE LIVE",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.ExtraBold,
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(
-                                                    text = "• ${DjConsoleController.selectedEffect.title}",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
-                                            Text(
-                                                text = "Next swap in ${DjConsoleController.secondsRemaining}s • Swaps: ${DjConsoleController.totalSwaps}",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                fontSize = 11.sp,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        FilledTonalButton(
-                                            onClick = { DjConsoleController.triggerImmediateCut() },
-                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                                            modifier = Modifier.height(30.dp)
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.sparks),
-                                                contentDescription = "Transition Now",
-                                                modifier = Modifier.size(13.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Drop", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                        }
-                                        Button(
-                                            onClick = {
-                                                DjConsoleController.stopDjConsole()
-                                                Toast.makeText(context, "DJ Console stopped", Toast.LENGTH_SHORT).show()
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.error,
-                                                contentColor = MaterialTheme.colorScheme.onError
-                                            ),
-                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                                            modifier = Modifier.height(30.dp)
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.close),
-                                                contentDescription = "Stop DJ",
-                                                modifier = Modifier.size(13.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Stop", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                        }
-                                    }
-                                }
-                            }
-                        }
+
                         // Apple Music Timeline Slider
                     val currentPos = sliderPosition ?: position
                     
@@ -1252,22 +1252,37 @@ fun PlayerV2(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 32.dp, vertical = 12.dp),
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val isLyricsActive = playerState == PlayerInternalState.LYRICS
-                    IconButton(
-                        onClick = { playerState = if (isLyricsActive) PlayerInternalState.COVER else PlayerInternalState.LYRICS },
-                        modifier = Modifier.size(44.dp)
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isLyricsActive) adaptivePrimary.copy(alpha = 0.20f) else Color.Transparent,
+                        modifier = Modifier.clickable {
+                            playerState = if (isLyricsActive) PlayerInternalState.COVER else PlayerInternalState.LYRICS
+                        }
                     ) {
-                        PlayerGlyph(
-                            slot = PlayerIconSlot.V2_LYRICS,
-                            fallback = R.drawable.apple_lyrics,
-                            tint = if (isLyricsActive) adaptivePrimary else adaptiveSecondary,
-                            modifier = Modifier.size(26.dp),
-                            contentDescription = "Lyrics",
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            PlayerGlyph(
+                                slot = PlayerIconSlot.V2_LYRICS,
+                                fallback = R.drawable.apple_lyrics,
+                                tint = if (isLyricsActive) adaptivePrimary else adaptiveSecondary,
+                                modifier = Modifier.size(24.dp),
+                                contentDescription = "Lyrics",
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Lyrics",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (isLyricsActive) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isLyricsActive) adaptivePrimary else adaptiveSecondary
+                            )
+                        }
                     }
 
                     Column(
@@ -1282,7 +1297,7 @@ fun PlayerV2(
                     ) {
                         if (BuildConfig.CAST_AVAILABLE && enableGoogleCast && bluetoothDeviceName == null) {
                             CastButton(
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(26.dp),
                                 tintColor = adaptiveSecondary,
                             )
                         } else {
@@ -1290,11 +1305,11 @@ fun PlayerV2(
                                 imageVector = if (bluetoothDeviceName != null) Icons.Default.Headphones else Icons.Default.VolumeUp,
                                 contentDescription = "Audio Device",
                                 tint = adaptiveSecondary,
-                                modifier = Modifier.size(26.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                         if (bluetoothDeviceName != null) {
-                            Spacer(Modifier.height(3.dp))
+                            Spacer(Modifier.height(2.dp))
                             Text(
                                 text = bluetoothDeviceName!!,
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
@@ -1302,23 +1317,38 @@ fun PlayerV2(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.widthIn(max = 140.dp)
+                                modifier = Modifier.widthIn(max = 130.dp)
                             )
                         }
                     }
 
                     val isQueueActive = playerState == PlayerInternalState.QUEUE
-                    IconButton(
-                        onClick = { playerState = if (isQueueActive) PlayerInternalState.COVER else PlayerInternalState.QUEUE },
-                        modifier = Modifier.size(44.dp)
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isQueueActive) adaptivePrimary.copy(alpha = 0.20f) else Color.Transparent,
+                        modifier = Modifier.clickable {
+                            playerState = if (isQueueActive) PlayerInternalState.COVER else PlayerInternalState.QUEUE
+                        }
                     ) {
-                        PlayerGlyph(
-                            slot = PlayerIconSlot.V2_QUEUE,
-                            fallback = R.drawable.apple_queue,
-                            tint = if (isQueueActive) adaptivePrimary else adaptiveSecondary,
-                            modifier = Modifier.size(26.dp),
-                            contentDescription = "Queue",
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            PlayerGlyph(
+                                slot = PlayerIconSlot.V2_QUEUE,
+                                fallback = R.drawable.apple_queue,
+                                tint = if (isQueueActive) adaptivePrimary else adaptiveSecondary,
+                                modifier = Modifier.size(24.dp),
+                                contentDescription = "Queue",
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Queue",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (isQueueActive) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isQueueActive) adaptivePrimary else adaptiveSecondary
+                            )
+                        }
                     }
                 }
             }
@@ -1326,14 +1356,6 @@ fun PlayerV2(
         
         if (showAudioDeviceBottomSheet) {
             AudioDeviceBottomSheet(onDismiss = { showAudioDeviceBottomSheet = false })
-        }
-
-        val currentMeta = mediaMetadata
-        if (showDynamicMashupDialog && currentMeta != null) {
-            DjConsoleDialog(
-                initialSong = currentMeta,
-                onDismiss = { showDynamicMashupDialog = false }
-            )
         }
     }
 }

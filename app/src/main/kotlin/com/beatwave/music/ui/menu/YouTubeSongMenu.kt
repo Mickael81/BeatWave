@@ -76,7 +76,6 @@ import com.beatwave.music.models.MediaMetadata
 import com.beatwave.music.models.toMediaMetadata
 import com.beatwave.music.playback.ExoDownloadService
 import com.beatwave.music.playback.queues.YouTubeQueue
-import com.beatwave.music.ui.component.DynamicMashupDialog
 import com.beatwave.music.ui.component.ListDialog
 import com.beatwave.music.ui.component.LocalBottomSheetPageState
 import com.beatwave.music.ui.component.Material3MenuGroup
@@ -141,17 +140,6 @@ fun YouTubeSongMenu(
     var showSelectArtistDialog by rememberSaveable {  
         mutableStateOf(false)  
     }  
-
-    var showDynamicMashupDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    if (showDynamicMashupDialog) {
-        DynamicMashupDialog(
-            initialSong = song.toMediaMetadata(),
-            onDismiss = { showDynamicMashupDialog = false }
-        )
-    }
 
     if (showSelectArtistDialog) {  
         ListDialog(  
@@ -393,19 +381,7 @@ fun YouTubeSongMenu(
                             }
                         )
                     } else null,
-                    Material3MenuItemData(
-                        title = { Text(text = "🎛️ DJ Console") },
-                        description = { Text(text = "Real-time DJ transitions & twin-deck mixing") },
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.equalizer),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            showDynamicMashupDialog = true
-                        }
-                    )
+
                 )
             )
         }

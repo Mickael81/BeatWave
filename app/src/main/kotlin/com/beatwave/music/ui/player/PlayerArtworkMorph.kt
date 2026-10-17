@@ -367,13 +367,13 @@ fun MorphingCoverArt(
                 val effectiveDuration = if (isCrossfading) {
                     crossfadeDurationMs.toInt().coerceIn(1200, 6000)
                 } else {
-                    animationDurationMillis
+                    1050
                 }
                 progress.animateTo(
                     targetValue = 1f,
                     animationSpec = tween(
                         durationMillis = effectiveDuration,
-                        easing = CubicBezierEasing(0.33f, 0.0f, 0.20f, 1.0f)
+                        easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
                     )
                 )
                 outgoingUrl = null
@@ -390,18 +390,18 @@ fun MorphingCoverArt(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // LAYER 1 (BASE): Incoming artwork layer — expands & resolves into focus!
+        // LAYER 1 (BASE): Incoming artwork layer — expands & ascends into focus!
         val curUrl = currentUrl
         if (!curUrl.isNullOrBlank()) {
             var activeCurUrl by remember(curUrl) { mutableStateOf<String?>(curUrl) }
             val inAlpha = if (outgoingUrl != null && !crossfadeBurnMorph) p.coerceIn(0f, 1f) else 1f
-            val inTranslateY = if (outgoingUrl != null && crossfadeBurnMorph) with(LocalDensity.current) { (12.dp * (1f - p)).toPx() } else 0f
+            val inTranslateY = if (outgoingUrl != null && crossfadeBurnMorph) with(LocalDensity.current) { (18.dp * (1f - p)).toPx() } else 0f
             val inScale = if (outgoingUrl != null && crossfadeBurnMorph) (0.94f + (0.06f * p)) else 1f
 
             // Chromatic aberration morph effect during track transition (matching convxdemo.mp4)
             val isMorphing = outgoingUrl != null && crossfadeBurnMorph && p in 0.02f..0.98f
             val morphPeak = if (isMorphing) peakIntensity else 0f
-            val chromaticOffsetPx = morphPeak * with(LocalDensity.current) { 12.dp.toPx() }
+            val chromaticOffsetPx = morphPeak * with(LocalDensity.current) { 10.dp.toPx() }
 
             if (morphPeak > 0.05f) {
                 // Cyan channel shift (left)
@@ -499,10 +499,11 @@ fun MorphingCoverArt(
             var activeOutUrl by remember(outUrl) { mutableStateOf<String?>(outUrl) }
             val outAlpha = (1f - p).coerceIn(0f, 1f)
             val outScale = if (crossfadeBurnMorph) 1f + (0.04f * p) else 1f
+            val outTranslateY = if (crossfadeBurnMorph) with(LocalDensity.current) { (-14.dp * p).toPx() } else 0f
 
             val isMorphing = crossfadeBurnMorph && p in 0.02f..0.98f
             val morphPeak = if (isMorphing) peakIntensity else 0f
-            val chromaticOffsetPx = morphPeak * with(LocalDensity.current) { 12.dp.toPx() }
+            val chromaticOffsetPx = morphPeak * with(LocalDensity.current) { 10.dp.toPx() }
 
             if (morphPeak > 0.05f) {
                 // Outgoing Cyan channel shift (left)
@@ -523,6 +524,7 @@ fun MorphingCoverArt(
                         .graphicsLayer {
                             alpha = (outAlpha * 0.85f).coerceIn(0f, 1f)
                             translationX = -chromaticOffsetPx
+                            translationY = outTranslateY
                             scaleX = outScale
                             scaleY = outScale
                         }
@@ -546,6 +548,7 @@ fun MorphingCoverArt(
                         .graphicsLayer {
                             alpha = (outAlpha * 0.85f).coerceIn(0f, 1f)
                             translationX = chromaticOffsetPx
+                            translationY = outTranslateY
                             scaleX = outScale
                             scaleY = outScale
                         }
@@ -569,6 +572,7 @@ fun MorphingCoverArt(
                     .fillMaxSize()
                     .graphicsLayer {
                         alpha = outAlpha
+                        translationY = outTranslateY
                         scaleX = outScale
                         scaleY = outScale
                     }

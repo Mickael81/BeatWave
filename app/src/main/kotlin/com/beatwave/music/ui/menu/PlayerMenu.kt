@@ -96,9 +96,7 @@ import com.beatwave.music.listentogether.MIN_ROOM_CODE_LENGTH
 import com.beatwave.music.models.MediaMetadata
 import com.beatwave.music.playback.ExoDownloadService
 import com.beatwave.music.ui.component.BottomSheetState
-import com.beatwave.music.ui.component.DynamicMashupDialog
 import com.beatwave.music.ui.component.ListDialog
-import com.beatwave.music.ui.component.Material3MenuGroup
 import com.beatwave.music.ui.component.Material3MenuItemData
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.LocalContentColor
@@ -246,16 +244,6 @@ fun PlayerMenu(
         )
     }
 
-    var showDynamicMashupDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    if (showDynamicMashupDialog) {
-        DynamicMashupDialog(
-            initialSong = mediaMetadata,
-            onDismiss = { showDynamicMashupDialog = false }
-        )
-    }
 
 
     var showAodScreen by rememberSaveable {
@@ -275,165 +263,6 @@ fun PlayerMenu(
                 .padding(horizontal = 24.dp)
                 .padding(top = 24.dp, bottom = 6.dp),
         ) {
-            // Dynamic Mashup Live Status & DJ Controls
-            if (com.beatwave.music.playback.DynamicMashupController.isActive) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.equalizer),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "DJ Console Live",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "${com.beatwave.music.playback.DynamicMashupController.currentStyle.title} • Next transition in ${com.beatwave.music.playback.DynamicMashupController.secondsRemaining}s",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(2.dp)
-                            ) {
-                                Text(
-                                    text = "${com.beatwave.music.playback.DynamicMashupController.currentTrackIndex + 1}/${com.beatwave.music.playback.DynamicMashupController.tracks.size}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            androidx.compose.material3.Button(
-                                onClick = {
-                                    com.beatwave.music.playback.DynamicMashupController.swapToNextTrack()
-                                },
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(vertical = 4.dp, horizontal = 8.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.sync),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Transition Now",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            androidx.compose.material3.OutlinedButton(
-                                onClick = {
-                                    com.beatwave.music.playback.DynamicMashupController.stopMashup()
-                                },
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(vertical = 4.dp, horizontal = 8.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.close),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Stop DJ",
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            }
-                        }
-                    }
-                }
-            } else {
-                Surface(
-                    onClick = { showDynamicMashupDialog = true },
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(12.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    painter = painterResource(R.drawable.equalizer),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "🎛️ DJ Console",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = "Real-time DJ transitions & twin-deck mixing studio",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Icon(
-                            painter = painterResource(R.drawable.arrow_forward),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
 
             // Show Cast indicator when casting (interactive pill to open Cast picker)
             if (isCasting && castDeviceName != null) {
@@ -527,18 +356,7 @@ fun PlayerMenu(
                             }
                         )
                     } else null,
-                    NewAction(
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.equalizer),
-                                contentDescription = null,
-                                modifier = Modifier.size(32.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        text = "DJ Console",
-                        onClick = { showDynamicMashupDialog = true }
-                    ),
+
                     NewAction(
                         icon = {
                             Icon(
@@ -949,22 +767,7 @@ fun PlayerMenu(
                                 }
                             )
                         )
-                        add(
-                            Material3MenuItemData(
-                                title = { Text(text = "🎛️ DJ Console") },
-                                description = { Text(text = "Real-time DJ transitions & twin-deck mixing") },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.equalizer),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                },
-                                onClick = {
-                                    showDynamicMashupDialog = true
-                                }
-                            )
-                        )
+
                         addAll(audioToolsItems)
                     }
                     add(

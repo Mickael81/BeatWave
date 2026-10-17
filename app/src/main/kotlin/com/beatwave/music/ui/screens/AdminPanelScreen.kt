@@ -47,7 +47,7 @@ fun AdminPanelScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Publish Update", "Publish News", "DJ Console", "Test Wrapped", "Suggestions", "Bug Reports")
+    val tabs = listOf("Publish Update", "Publish News", "Test Wrapped", "Suggestions", "Bug Reports")
 
     Scaffold(
         topBar = {
@@ -86,9 +86,8 @@ fun AdminPanelScreen(
                 when (selectedTab) {
                     0 -> PublishUpdateTab(navController, playerBottomPadding)
                     1 -> PublishNewsTab(navController, playerBottomPadding)
-                    2 -> DjMashupStudioTab(playerBottomPadding)
-                    3 -> TestWrappedTab(navController, playerBottomPadding)
-                    4 -> SuggestionsTab(playerBottomPadding)
+                    2 -> TestWrappedTab(navController, playerBottomPadding)
+                    3 -> SuggestionsTab(playerBottomPadding)
                     else -> BugReportsTab(playerBottomPadding)
                 }
             }
