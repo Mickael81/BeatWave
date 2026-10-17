@@ -79,7 +79,8 @@ sealed class Screens(
         // Listen Together is reachable from the top bar and its own route, never as a
         // tab: as a pager page it sat between Search and Library, so every tab switch
         // that crossed it flashed the screen on the way past.
-        val MainScreens = listOf(Home, Search, Library)
+        val MainScreens: List<Screens>
+            get() = listOf(Home, Search, Library)
 
         /**
          * The bar's contents for the current mode. Local-only mode promotes [Songs] to a
@@ -91,6 +92,7 @@ sealed class Screens(
             if (localOnly) listOf(Home, Songs, Search, Library) else MainScreens
 
         /** Every route that counts as a tab root, in either mode. */
-        val MainRoutes: Set<String> = (MainScreens + Songs).map { it.route }.toSet()
+        val MainRoutes: Set<String>
+            get() = setOf(Home.route, Search.route, Library.route, Songs.route)
     }
 }

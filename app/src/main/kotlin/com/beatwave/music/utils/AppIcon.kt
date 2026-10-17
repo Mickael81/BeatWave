@@ -35,7 +35,7 @@ enum class AppIcon(
     ;
 
     companion object {
-        val DEFAULT = GLASS
+        val DEFAULT: AppIcon get() = GLASS
 
         fun fromId(id: String?): AppIcon = entries.firstOrNull { it.id == id } ?: DEFAULT
 

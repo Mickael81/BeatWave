@@ -231,8 +231,8 @@ class WelcomeActivity : ComponentActivity() {
 }
 
 @OptIn(ExperimentalTextApi::class)
-val GoogleSansFlex: FontFamily by lazy {
-    runCatching {
+val GoogleSansFlex: FontFamily
+    get() = runCatching {
         FontFamily(
             Font(
                 resId = com.beatwave.music.R.font.google_sans_flex,
@@ -241,7 +241,6 @@ val GoogleSansFlex: FontFamily by lazy {
             )
         )
     }.getOrDefault(FontFamily.Default)
-}
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
@@ -1620,24 +1619,25 @@ fun WelcomeYouTubeLoginDialog(
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),
                     factory = { webViewContext ->
-                        WebView(webViewContext).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            settings.apply {
-                                javaScriptEnabled = true
-                                domStorageEnabled = true
-                                databaseEnabled = true
-                                setSupportZoom(true)
-                                builtInZoomControls = true
-                                displayZoomControls = false
-                                userAgentString = userAgentString.replace("; wv", "")
-                            }
-                            if (WebViewFeature.isFeatureSupported(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST)) {
-                                WebSettingsCompat.setRequestedWithHeaderOriginAllowList(settings, emptySet())
-                            }
-                            addJavascriptInterface(object {
+                        try {
+                            WebView(webViewContext).apply {
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                                settings.apply {
+                                    javaScriptEnabled = true
+                                    domStorageEnabled = true
+                                    databaseEnabled = true
+                                    setSupportZoom(true)
+                                    builtInZoomControls = true
+                                    displayZoomControls = false
+                                    userAgentString = userAgentString.replace("; wv", "")
+                                }
+                                if (WebViewFeature.isFeatureSupported(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST)) {
+                                    WebSettingsCompat.setRequestedWithHeaderOriginAllowList(settings, emptySet())
+                                }
+                                addJavascriptInterface(object {
                                 @JavascriptInterface
                                 fun onRetrieveVisitorData(newVisitorData: String?) {
                                     if (!newVisitorData.isNullOrBlank() && newVisitorData != "null") {
@@ -1689,8 +1689,13 @@ fun WelcomeYouTubeLoginDialog(
                             webView = this
                             loadUrl("https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fmusic.youtube.com")
                         }
-                    },
-                    update = { view -> webView = view }
+                    } catch (e: Throwable) {
+                        WebView(webViewContext).apply {
+                            webView = this
+                        }
+                    }
+                },
+                update = { view -> webView = view }
                 )
             }
         }
@@ -1770,102 +1775,108 @@ fun WelcomeSpotifyLoginDialog(
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),
                     factory = { context ->
-                        WebView(context).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        try {
+                            WebView(context).apply {
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                                setBackgroundColor(android.graphics.Color.TRANSPARENT)
 
-                            val cookieManager = CookieManager.getInstance()
-                            cookieManager.setAcceptCookie(true)
-                            cookieManager.setAcceptThirdPartyCookies(this, true)
+                                val cookieManager = CookieManager.getInstance()
+                                cookieManager.setAcceptCookie(true)
+                                cookieManager.setAcceptThirdPartyCookies(this, true)
 
-                            settings.apply {
-                                javaScriptEnabled = true
-                                domStorageEnabled = true
-                                databaseEnabled = true
-                                allowFileAccess = true
-                                allowContentAccess = true
-                                loadWithOverviewMode = true
-                                useWideViewPort = true
-                                mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                                setSupportZoom(true)
-                                builtInZoomControls = true
-                                displayZoomControls = false
+                                settings.apply {
+                                    javaScriptEnabled = true
+                                    domStorageEnabled = true
+                                    databaseEnabled = true
+                                    allowFileAccess = true
+                                    allowContentAccess = true
+                                    loadWithOverviewMode = true
+                                    useWideViewPort = true
+                                    mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                    setSupportZoom(true)
+                                    builtInZoomControls = true
+                                    displayZoomControls = false
 
-                                val rawUa = userAgentString.orEmpty()
-                                userAgentString = if (rawUa.contains("; wv")) {
-                                    rawUa.replace("; wv", "")
-                                } else if (rawUa.isNotBlank()) {
-                                    rawUa
-                                } else {
-                                    "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
-                                }
-                            }
-
-                            webChromeClient = object : WebChromeClient() {
-                                override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                                    pageProgress = newProgress
-                                    if (newProgress >= 100) {
-                                        isLoading = false
+                                    val rawUa = userAgentString.orEmpty()
+                                    userAgentString = if (rawUa.contains("; wv")) {
+                                        rawUa.replace("; wv", "")
+                                    } else if (rawUa.isNotBlank()) {
+                                        rawUa
+                                    } else {
+                                        "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
                                     }
                                 }
-                            }
 
-                            webViewClient = object : WebViewClient() {
-                                private fun captureCookies(url: String?): Boolean {
-                                    if (captured) return true
-                                    cookieManager.flush()
-                                    val allCookies = buildString {
-                                        append(cookieManager.getCookie("https://open.spotify.com") ?: "")
-                                        append(";")
-                                        append(cookieManager.getCookie("https://accounts.spotify.com") ?: "")
-                                        append(";")
-                                        append(cookieManager.getCookie("https://spotify.com") ?: "")
-                                        if (url != null) {
-                                            append(";")
-                                            append(cookieManager.getCookie(url) ?: "")
+                                webChromeClient = object : WebChromeClient() {
+                                    override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                                        pageProgress = newProgress
+                                        if (newProgress >= 100) {
+                                            isLoading = false
                                         }
                                     }
-                                    val cookies = allCookies.split(";").associate {
-                                        val parts = it.split("=")
-                                        val key = parts.firstOrNull()?.trim().orEmpty()
-                                        val valStr = parts.drop(1).joinToString("=").trim()
-                                        key to valStr
+                                }
+
+                                webViewClient = object : WebViewClient() {
+                                    private fun captureCookies(url: String?): Boolean {
+                                        if (captured) return true
+                                        cookieManager.flush()
+                                        val allCookies = buildString {
+                                            append(cookieManager.getCookie("https://open.spotify.com") ?: "")
+                                            append(";")
+                                            append(cookieManager.getCookie("https://accounts.spotify.com") ?: "")
+                                            append(";")
+                                            append(cookieManager.getCookie("https://spotify.com") ?: "")
+                                            if (url != null) {
+                                                append(";")
+                                                append(cookieManager.getCookie(url) ?: "")
+                                            }
+                                        }
+                                        val cookies = allCookies.split(";").associate {
+                                            val parts = it.split("=")
+                                            val key = parts.firstOrNull()?.trim().orEmpty()
+                                            val valStr = parts.drop(1).joinToString("=").trim()
+                                            key to valStr
+                                        }
+                                        val spDc = cookies["sp_dc"].orEmpty()
+                                        if (spDc.isBlank()) return false
+                                        captured = true
+                                        val spKey = cookies["sp_key"].orEmpty()
+                                        onCookiesCaptured(spDc, spKey)
+                                        return true
                                     }
-                                    val spDc = cookies["sp_dc"].orEmpty()
-                                    if (spDc.isBlank()) return false
-                                    captured = true
-                                    val spKey = cookies["sp_key"].orEmpty()
-                                    onCookiesCaptured(spDc, spKey)
-                                    return true
+
+                                    override fun shouldOverrideUrlLoading(
+                                        view: WebView,
+                                        request: WebResourceRequest,
+                                    ): Boolean = captureCookies(request.url?.toString())
+
+                                    override fun onPageStarted(
+                                        view: WebView,
+                                        url: String?,
+                                        favicon: Bitmap?,
+                                    ) {
+                                        isLoading = true
+                                        captureCookies(url)
+                                    }
+
+                                    override fun onPageFinished(view: WebView, url: String?) {
+                                        isLoading = false
+                                        captureCookies(url)
+                                    }
                                 }
 
-                                override fun shouldOverrideUrlLoading(
-                                    view: WebView,
-                                    request: WebResourceRequest,
-                                ): Boolean = captureCookies(request.url?.toString())
-
-                                override fun onPageStarted(
-                                    view: WebView,
-                                    url: String?,
-                                    favicon: Bitmap?,
-                                ) {
-                                    isLoading = true
-                                    captureCookies(url)
-                                }
-
-                                override fun onPageFinished(view: WebView, url: String?) {
-                                    isLoading = false
-                                    captureCookies(url)
-                                }
+                                webView = this
+                                cookieManager.removeAllCookies(null)
+                                cookieManager.flush()
+                                loadUrl(SpotifyAuth.LOGIN_URL)
                             }
-
-                            webView = this
-                            cookieManager.removeAllCookies(null)
-                            cookieManager.flush()
-                            loadUrl(SpotifyAuth.LOGIN_URL)
+                        } catch (e: Throwable) {
+                            WebView(context).apply {
+                                webView = this
+                            }
                         }
                     },
                     update = { view ->
