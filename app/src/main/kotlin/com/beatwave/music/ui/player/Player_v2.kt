@@ -46,7 +46,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import coil3.SingletonImageLoader
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.size.Size as CoilSize
 import androidx.media3.common.C
+
 import com.beatwave.music.LocalPlayerConnection
 import com.beatwave.music.constants.PlayerBackgroundStyle
 import com.beatwave.music.constants.PlayerBackgroundStyleKey
@@ -284,6 +289,31 @@ fun PlayerV2(
             delay(50)
         }
     }
+
+    // Prefetch upcoming tracks in queue for instantaneous, zero-lag crossfade morph
+    LaunchedEffect(mediaMetadata, playerConnection) {
+        val player = playerConnection.player
+        val count = player.mediaItemCount
+        val currentIndex = player.currentMediaItemIndex
+        val indicesToPrefetch = listOf(currentIndex + 1, currentIndex + 2, currentIndex - 1)
+            .filter { it in 0 until count }
+
+        indicesToPrefetch.forEach { idx ->
+            val item = player.getMediaItemAt(idx)
+            val artworkUri = item.mediaMetadata.artworkUri?.toString()?.resize(1200, 1200)
+            if (!artworkUri.isNullOrBlank()) {
+                val req = ImageRequest.Builder(context)
+                    .data(artworkUri)
+                    .size(CoilSize.ORIGINAL)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .networkCachePolicy(CachePolicy.ENABLED)
+                    .build()
+                SingletonImageLoader.get(context).enqueue(req)
+            }
+        }
+    }
+
 
     val adaptivePrimary by animateColorAsState(
         targetValue = if (appTextColorInt != 0) Color(appTextColorInt) else when (playerBackground) {

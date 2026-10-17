@@ -349,7 +349,7 @@ fun BottomSheetPlayer(
     // through the sheet's real drag/expand/collapse mechanics -- an early return
     // here used to skip that machinery entirely, which is why V17 used to render
     // as an always-on-top full-bleed box instead of a proper mini/expanded player.
-    val (useAppleMusicPlayer) = rememberPreference(UseAppleMusicPlayerKey, defaultValue = false)
+    val (useAppleMusicPlayer) = rememberPreference(UseAppleMusicPlayerKey, defaultValue = true)
 
     // Shared between the background slot (BackgroundVideoView polls into it)
     // and the control pills below (read it via LocalBackdropLoopBucket) — see
@@ -1510,7 +1510,7 @@ fun BottomSheetPlayer(
                                     // Layer 2: Clear Artwork (Limited to top 60% of screen)
                                     // Fades out when lyrics are shown to provide a full-screen blur
                                     val clearArtworkAlpha by animateFloatAsState(
-                                        targetValue = if (showInlineLyrics) 0f else 1f,
+                                        targetValue = if (showInlineLyrics || useAppleMusicPlayer) 0f else 1f,
                                         animationSpec = tween(500),
                                         label = "clearArtworkAlpha"
                                     )
@@ -1539,16 +1539,12 @@ fun BottomSheetPlayer(
                                                 )
                                             }
                                     ) {
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(context)
-                                                .data(thumbnailUrl)
-                                                .size(CoilSize.ORIGINAL)
-                                                .crossfade(true)
-                                                .build(),
-                                            contentDescription = null,
+                                        MorphingCoverArt(
+                                            artworkUri = thumbnailUrl,
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier.fillMaxSize()
                                         )
+
 
                                         if (enableCanvas && canvasArtwork != null && backgroundVisible) {
                                             BackgroundVideoView(

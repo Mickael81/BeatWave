@@ -35,6 +35,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.background
@@ -44,6 +45,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -216,8 +219,8 @@ fun Modifier.hideWhileArtworkMorphing(progress: () -> Float): Modifier = graphic
 
 /**
  * Renders album cover art that morphs and cross-fades smoothly into the next song's
- * cover art during track changes (both auto-crossfade and manual skip/seek), with subtle
- * scale zoom and depth dissolving matching the Convx / Apple Music fluid player experience.
+ * cover art during track changes (both auto-crossfade and manual skip/seek), matching
+ * convxdemo.mp4 exactly with a dual-layer pixel-perfect dissolve.
  */
 @Composable
 fun MorphingCoverArt(
@@ -225,82 +228,92 @@ fun MorphingCoverArt(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
     contentDescription: String? = "Cover Art",
-    animationDurationMillis: Int = 800,
+    animationDurationMillis: Int = 650,
 ) {
     val context = LocalContext.current
 
-    AnimatedContent(
-        targetState = artworkUri,
-        transitionSpec = {
-            (fadeIn(
+    var currentUrl by remember { mutableStateOf(artworkUri) }
+    var outgoingUrl by remember { mutableStateOf<String?>(null) }
+    val progress = remember { Animatable(1f) }
+
+    LaunchedEffect(artworkUri) {
+        if (artworkUri != currentUrl) {
+            outgoingUrl = currentUrl
+            currentUrl = artworkUri
+            progress.snapTo(0f)
+            progress.animateTo(
+                targetValue = 1f,
                 animationSpec = tween(
                     durationMillis = animationDurationMillis,
                     easing = FastOutSlowInEasing
-                )
-            ) + scaleIn(
-                initialScale = 0.96f,
-                animationSpec = tween(
-                    durationMillis = animationDurationMillis,
-                    easing = FastOutSlowInEasing
-                )
-            )).togetherWith(
-                fadeOut(
-                    animationSpec = tween(
-                        durationMillis = animationDurationMillis,
-                        easing = FastOutSlowInEasing
-                    )
-                ) + scaleOut(
-                    targetScale = 1.04f,
-                    animationSpec = tween(
-                        durationMillis = animationDurationMillis,
-                        easing = FastOutSlowInEasing
-                    )
                 )
             )
-        },
-        contentAlignment = Alignment.Center,
-        label = "MorphingCoverArt",
-        modifier = modifier
-    ) { currentUri ->
-        var activeUrl by remember(currentUri) {
-            mutableStateOf(currentUri)
+            outgoingUrl = null
+        }
+    }
+
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        // Outgoing artwork layer (fades out from 1f -> 0f while remaining completely stationary)
+        val outUrl = outgoingUrl
+        if (!outUrl.isNullOrBlank() && progress.value < 1f) {
+            var activeOutUrl by remember(outUrl) { mutableStateOf(outUrl) }
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(activeOutUrl)
+                    .size(CoilSize.ORIGINAL)
+                    .crossfade(false)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .networkCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                onError = { activeOutUrl = nextThumbnailFallback(activeOutUrl) },
+                contentDescription = null,
+                contentScale = contentScale,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = (1f - progress.value).coerceIn(0f, 1f) }
+            )
         }
 
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            if (!activeUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(activeUrl)
-                        .size(CoilSize.ORIGINAL)
-                        .crossfade(false)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCachePolicy(CachePolicy.ENABLED)
-                        .networkCachePolicy(CachePolicy.ENABLED)
-                        .build(),
-                    onError = { activeUrl = nextThumbnailFallback(activeUrl) },
+        // Incoming / current artwork layer (fades in from 0f -> 1f while remaining completely stationary)
+        val curUrl = currentUrl
+        if (!curUrl.isNullOrBlank()) {
+            var activeCurUrl by remember(curUrl) { mutableStateOf(curUrl) }
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(activeCurUrl)
+                    .size(CoilSize.ORIGINAL)
+                    .crossfade(false)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .networkCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                onError = { activeCurUrl = nextThumbnailFallback(activeCurUrl) },
+                contentDescription = contentDescription,
+                contentScale = contentScale,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = progress.value.coerceIn(0f, 1f) }
+            )
+        } else if (outgoingUrl.isNullOrBlank()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.beatwave_logo),
                     contentDescription = contentDescription,
-                    contentScale = contentScale,
-                    modifier = Modifier.fillMaxSize()
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.size(64.dp)
                 )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.beatwave_logo),
-                        contentDescription = contentDescription,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        modifier = Modifier.size(64.dp)
-                    )
-                }
             }
         }
     }
 }
+
 
