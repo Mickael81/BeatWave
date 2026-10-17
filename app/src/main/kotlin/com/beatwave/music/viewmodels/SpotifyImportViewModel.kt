@@ -99,6 +99,7 @@ class SpotifyImportViewModel @Inject constructor(
     val importProgress: StateFlow<SpotifyImportProgress?> = _importProgress.asStateFlow()
 
     private var importJob: Job? = null
+    private val searchCache = java.util.concurrent.ConcurrentHashMap<String, MediaMetadata>()
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -440,36 +441,7 @@ class SpotifyImportViewModel @Inject constructor(
                             semaphore.withPermit {
                                 var resultMedia: MediaMetadata? = null
                                 try {
-                                    val artist = song.artists.firstOrNull()?.name.orEmpty()
-                                    val songTitle = song.title
-                                    val query = if (artist.isEmpty()) songTitle else "$artist $songTitle"
-
-                                    val searchResult = YouTube.search(
-                                        query = query,
-                                        filter = YouTube.SearchFilter.FILTER_SONG,
-                                    ).getOrNull()
-
-                                    val candidates = searchResult?.items
-                                        ?.filterIsInstance<SongItem>()
-                                        ?.distinctBy { it.id }
-                                        .orEmpty()
-
-                                    val best = candidates.maxByOrNull { candidate ->
-                                        SpotifyMapper.matchScore(
-                                            spotifyTitle = song.title,
-                                            spotifyArtist = song.artists.joinToString(" ") { it.name },
-                                            spotifyDurationMs = song.song.duration * 1000,
-                                            candidateTitle = candidate.title,
-                                            candidateArtist = candidate.artists.joinToString(" ") { it.name },
-                                            candidateDurationSec = candidate.duration,
-                                        )
-                                    }
-
-                                    if (best != null) {
-                                        resultMedia = best.toMediaMetadata()
-                                    }
-                                } catch (e: Exception) {
-                                    reportException(e)
+                                    resultMedia = matchSongToYouTube(song)
                                 } finally {
                                     val done = completedCount.incrementAndGet()
                                     _importProgress.update {
@@ -486,57 +458,7 @@ class SpotifyImportViewModel @Inject constructor(
                         }
                     }.awaitAll().filterNotNull()
 
-                    database.withTransaction {
-                        val existing = playlist(importData.localPlaylistId).first()
-                        val now = LocalDateTime.now()
-                        val entity = existing?.playlist?.copy(
-                            name = importData.title,
-                            bookmarkedAt = existing.playlist.bookmarkedAt ?: now,
-                            lastUpdateTime = now,
-                            thumbnailUrl = importData.thumbnailUrl,
-                            isEditable = true,
-                        ) ?: PlaylistEntity(
-                            id = importData.localPlaylistId,
-                            name = importData.title,
-                            bookmarkedAt = now,
-                            lastUpdateTime = now,
-                            thumbnailUrl = importData.thumbnailUrl,
-                            isEditable = true,
-                        )
-
-                        if (existing == null) {
-                            insert(entity)
-                        } else {
-                            update(entity)
-                        }
-
-                        matchedMedia.forEach { metadata ->
-                            insert(metadata)
-                            if (importData.localPlaylistId == "SPOTIFY_LIKED_SONGS") {
-                                val dbSong = song(metadata.id).first()
-                                if (dbSong != null) {
-                                    update(dbSong.song.copy(
-                                        liked = true,
-                                        likedDate = dbSong.song.likedDate ?: now,
-                                        inLibrary = dbSong.song.inLibrary ?: now
-                                    ))
-                                }
-                            }
-                        }
-
-                        clearPlaylist(importData.localPlaylistId)
-                        matchedMedia.forEachIndexed { index, metadata ->
-                            insert(
-                                PlaylistSongMap(
-                                    playlistId = importData.localPlaylistId,
-                                    songId = metadata.id,
-                                    position = index,
-                                    setVideoId = metadata.setVideoId,
-                                )
-                            )
-                        }
-                        update(entity.copy(lastUpdateTime = now))
-                    }
+                    saveImportedPlaylist(importData, matchedMedia)
                 }
                 _importProgress.update { old ->
                     old?.copy(isFinished = true) ?: SpotifyImportProgress(
@@ -639,36 +561,7 @@ class SpotifyImportViewModel @Inject constructor(
                         semaphore.withPermit {
                             var resultMedia: MediaMetadata? = null
                             try {
-                                val artist = song.artists.firstOrNull()?.name.orEmpty()
-                                val songTitle = song.title
-                                val query = if (artist.isEmpty()) songTitle else "$artist $songTitle"
-
-                                val searchResult = YouTube.search(
-                                    query = query,
-                                    filter = YouTube.SearchFilter.FILTER_SONG,
-                                ).getOrNull()
-
-                                val candidates = searchResult?.items
-                                    ?.filterIsInstance<SongItem>()
-                                    ?.distinctBy { it.id }
-                                    .orEmpty()
-
-                                val best = candidates.maxByOrNull { candidate ->
-                                    SpotifyMapper.matchScore(
-                                        spotifyTitle = song.title,
-                                        spotifyArtist = song.artists.joinToString(" ") { it.name },
-                                        spotifyDurationMs = song.song.duration * 1000,
-                                        candidateTitle = candidate.title,
-                                        candidateArtist = candidate.artists.joinToString(" ") { it.name },
-                                        candidateDurationSec = candidate.duration,
-                                    )
-                                }
-
-                                if (best != null) {
-                                    resultMedia = best.toMediaMetadata()
-                                }
-                            } catch (e: Exception) {
-                                reportException(e)
+                                resultMedia = matchSongToYouTube(song)
                             } finally {
                                 val done = completedCount.incrementAndGet()
                                 _importProgress.update {
@@ -685,47 +578,7 @@ class SpotifyImportViewModel @Inject constructor(
                     }
                 }.awaitAll().filterNotNull()
 
-                database.withTransaction {
-                    val existing = playlist(importData.localPlaylistId).first()
-                    val now = LocalDateTime.now()
-                    val entity = existing?.playlist?.copy(
-                        name = importData.title,
-                        bookmarkedAt = existing.playlist.bookmarkedAt ?: now,
-                        lastUpdateTime = now,
-                        thumbnailUrl = importData.thumbnailUrl,
-                        isEditable = true,
-                    ) ?: PlaylistEntity(
-                        id = importData.localPlaylistId,
-                        name = importData.title,
-                        bookmarkedAt = now,
-                        lastUpdateTime = now,
-                        thumbnailUrl = importData.thumbnailUrl,
-                        isEditable = true,
-                    )
-
-                    if (existing == null) {
-                        insert(entity)
-                    } else {
-                        update(entity)
-                    }
-
-                    matchedMedia.forEach { metadata ->
-                        insert(metadata)
-                    }
-
-                    clearPlaylist(importData.localPlaylistId)
-                    matchedMedia.forEachIndexed { index, metadata ->
-                        insert(
-                            PlaylistSongMap(
-                                playlistId = importData.localPlaylistId,
-                                songId = metadata.id,
-                                position = index,
-                                setVideoId = metadata.setVideoId,
-                            )
-                        )
-                    }
-                    update(entity.copy(lastUpdateTime = now))
-                }
+                saveImportedPlaylist(importData, matchedMedia)
 
                 _importProgress.update { old ->
                     old?.copy(isFinished = true) ?: SpotifyImportProgress(
@@ -760,6 +613,108 @@ class SpotifyImportViewModel @Inject constructor(
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
+        }
+    }
+
+    private suspend fun matchSongToYouTube(song: Song): MediaMetadata? {
+        val artist = song.artists.firstOrNull()?.name.orEmpty()
+        val songTitle = song.title
+        val query = if (artist.isEmpty()) songTitle else "$artist $songTitle"
+        val cacheKey = query.trim().lowercase()
+
+        searchCache[cacheKey]?.let { return it }
+
+        try {
+            val searchResult = YouTube.search(
+                query = query,
+                filter = YouTube.SearchFilter.FILTER_SONG,
+            ).getOrNull()
+
+            val candidates = searchResult?.items
+                ?.filterIsInstance<SongItem>()
+                ?.distinctBy { it.id }
+                .orEmpty()
+
+            val best = candidates.maxByOrNull { candidate ->
+                SpotifyMapper.matchScore(
+                    spotifyTitle = song.title,
+                    spotifyArtist = song.artists.joinToString(" ") { it.name },
+                    spotifyDurationMs = song.song.duration * 1000,
+                    candidateTitle = candidate.title,
+                    candidateArtist = candidate.artists.joinToString(" ") { it.name },
+                    candidateDurationSec = candidate.duration,
+                )
+            }
+
+            if (best != null) {
+                val media = best.toMediaMetadata()
+                searchCache[cacheKey] = media
+                return media
+            }
+        } catch (e: Exception) {
+            reportException(e)
+        }
+        return null
+    }
+
+    private suspend fun saveImportedPlaylist(
+        importData: PlaylistImportData,
+        matchedMedia: List<MediaMetadata>
+    ) {
+        database.withTransaction {
+            val existing = playlist(importData.localPlaylistId).first()
+            val now = LocalDateTime.now()
+            val entity = existing?.playlist?.copy(
+                name = importData.title,
+                bookmarkedAt = existing.playlist.bookmarkedAt ?: now,
+                lastUpdateTime = now,
+                thumbnailUrl = importData.thumbnailUrl,
+                isEditable = true,
+            ) ?: PlaylistEntity(
+                id = importData.localPlaylistId,
+                name = importData.title,
+                bookmarkedAt = now,
+                lastUpdateTime = now,
+                thumbnailUrl = importData.thumbnailUrl,
+                isEditable = true,
+            )
+
+            if (existing == null) {
+                insert(entity)
+            } else {
+                update(entity)
+            }
+
+            matchedMedia.chunked(25).forEach { chunk ->
+                chunk.forEach { metadata ->
+                    insert(metadata)
+                    if (importData.localPlaylistId == "SPOTIFY_LIKED_SONGS") {
+                        val dbSong = song(metadata.id).first()
+                        if (dbSong != null) {
+                            update(
+                                dbSong.song.copy(
+                                    liked = true,
+                                    likedDate = dbSong.song.likedDate ?: now,
+                                    inLibrary = dbSong.song.inLibrary ?: now
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            clearPlaylist(importData.localPlaylistId)
+            matchedMedia.forEachIndexed { index, metadata ->
+                insert(
+                    PlaylistSongMap(
+                        playlistId = importData.localPlaylistId,
+                        songId = metadata.id,
+                        position = index,
+                        setVideoId = metadata.setVideoId,
+                    )
+                )
+            }
+            update(entity.copy(lastUpdateTime = now))
         }
     }
 

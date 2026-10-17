@@ -48,6 +48,41 @@ object UniversalPlaylistImporter {
     private const val DESKTOP_UA =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
+    fun unescapeHtml(text: String): String {
+        if (!text.contains('&')) return text.trim()
+        var result = text
+            .replace("&amp;", "&")
+            .replace("&quot;", "\"")
+            .replace("&#34;", "\"")
+            .replace("&apos;", "'")
+            .replace("&#39;", "'")
+            .replace("&#x27;", "'")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&nbsp;", " ")
+            .replace("&#160;", " ")
+            .replace("&ndash;", "–")
+            .replace("&mdash;", "—")
+            .replace("&#8211;", "–")
+            .replace("&#8212;", "—")
+            .replace("&#8216;", "‘")
+            .replace("&#8217;", "’")
+            .replace("&#8220;", "“")
+            .replace("&#8221;", "”")
+
+        if (result.contains("&#")) {
+            result = Regex("""&#(\d+);""").replace(result) { mr ->
+                val code = mr.groupValues[1].toIntOrNull()
+                if (code != null && code in 32..65535) code.toChar().toString() else mr.value
+            }
+            result = Regex("""&#x([0-9a-fA-F]+);""").replace(result) { mr ->
+                val code = mr.groupValues[1].toIntOrNull(16)
+                if (code != null && code in 32..65535) code.toChar().toString() else mr.value
+            }
+        }
+        return result.trim()
+    }
+
     private suspend fun fetchHtml(url: String): String = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(url)
@@ -67,9 +102,9 @@ object UniversalPlaylistImporter {
         when {
             cleanLink.contains("apple.com") -> parseAppleMusic(cleanLink)
             cleanLink.contains("amazon.") -> parseAmazonMusic(cleanLink)
-            cleanLink.contains("spotify.com") || cleanLink.matches(Regex("^[a-zA-Z0-9]{22}$")) -> parseSpotify(cleanLink)
+            cleanLink.contains("spotify.com") || cleanLink.startsWith("spotify:") || cleanLink.matches(Regex("^[a-zA-Z0-9]{22}$")) -> parseSpotify(cleanLink)
             else -> {
-                // If it looks like a Spotify ID or unrecognized URL, try Spotify first, then Apple
+                // If unrecognized URL, try Spotify first, then throw
                 try {
                     parseSpotify(cleanLink)
                 } catch (e: Exception) {
@@ -80,13 +115,17 @@ object UniversalPlaylistImporter {
     }
 
     private suspend fun parseSpotify(link: String): UniversalPlaylist {
-        val playlistId = when {
-            link.contains("spotify.com/playlist/") ->
-                link.substringAfter("spotify.com/playlist/").substringBefore("?").trim()
+        val isAlbum = link.contains("/album/") || link.startsWith("spotify:album:")
+        val type = if (isAlbum) "album" else "playlist"
+        val id = when {
+            link.contains("/album/") -> link.substringAfter("/album/").substringBefore("?").substringBefore("/")
+            link.contains("/playlist/") -> link.substringAfter("/playlist/").substringBefore("?").substringBefore("/")
+            link.startsWith("spotify:album:") -> link.substringAfter("spotify:album:").substringBefore("?")
+            link.startsWith("spotify:playlist:") -> link.substringAfter("spotify:playlist:").substringBefore("?")
             else -> link.trim()
         }
 
-        val html = fetchHtml("https://open.spotify.com/embed/playlist/$playlistId")
+        val html = fetchHtml("https://open.spotify.com/embed/$type/$id")
         val regex = Regex("""<script id="__NEXT_DATA__"[^>]*>(.*?)</script>""")
         val matchResult = regex.find(html) ?: throw Exception("Could not parse Spotify page data")
         val jsonStr = matchResult.groupValues[1]
@@ -98,7 +137,8 @@ object UniversalPlaylistImporter {
         val data = state?.get("data")?.jsonObject
         val entity = data?.get("entity")?.jsonObject
 
-        val playlistName = entity?.get("name")?.jsonPrimitive?.contentOrNull ?: "Spotify Playlist"
+        val rawName = entity?.get("name")?.jsonPrimitive?.contentOrNull ?: if (isAlbum) "Spotify Album" else "Spotify Playlist"
+        val playlistName = unescapeHtml(rawName)
         val coverUrl = entity?.get("coverArt")?.jsonObject
             ?.get("sources")?.jsonArray?.firstOrNull()?.jsonObject
             ?.get("url")?.jsonPrimitive?.contentOrNull
@@ -106,8 +146,8 @@ object UniversalPlaylistImporter {
         val trackList = entity?.get("trackList")?.jsonArray ?: emptyList()
         val songs = trackList.mapNotNull { trackElement ->
             val trackObj = trackElement.jsonObject
-            val title = trackObj["title"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-            val artist = trackObj["subtitle"]?.jsonPrimitive?.contentOrNull ?: "Unknown Artist"
+            val title = trackObj["title"]?.jsonPrimitive?.contentOrNull?.let { unescapeHtml(it) } ?: return@mapNotNull null
+            val artist = trackObj["subtitle"]?.jsonPrimitive?.contentOrNull?.let { unescapeHtml(it) } ?: "Unknown Artist"
             val durationMs = trackObj["duration"]?.jsonPrimitive?.longOrNull ?: 0L
 
             Song(
@@ -122,7 +162,7 @@ object UniversalPlaylistImporter {
         }
 
         if (songs.isEmpty()) {
-            throw Exception("No tracks found in the Spotify playlist. Make sure it is public.")
+            throw Exception("No tracks found in the Spotify $type. Make sure it is public.")
         }
 
         return UniversalPlaylist(
@@ -139,7 +179,8 @@ object UniversalPlaylistImporter {
         // Try extracting metadata from OpenGraph
         val ogTitle = Regex("""<meta property="og:title" content="([^"]+)"""").find(html)?.groupValues?.get(1)
         val ogImage = Regex("""<meta property="og:image" content="([^"]+)"""").find(html)?.groupValues?.get(1)
-        val playlistTitle = ogTitle?.substringBefore(" by ")?.substringBefore(" - ") ?: "Apple Music Playlist"
+        val rawTitle = ogTitle?.substringBefore(" by ")?.substringBefore(" - ") ?: "Apple Music Playlist"
+        val playlistTitle = unescapeHtml(rawTitle)
 
         val songs = mutableListOf<Song>()
 
@@ -164,8 +205,8 @@ object UniversalPlaylistImporter {
                 RegexOption.DOT_MATCHES_ALL
             )
             trackRowRegex.findAll(html).forEach { match ->
-                val title = match.groupValues[1].trim()
-                val artist = match.groupValues[2].trim()
+                val title = unescapeHtml(match.groupValues[1].trim())
+                val artist = unescapeHtml(match.groupValues[2].trim())
                 if (title.isNotBlank()) {
                     songs.add(
                         Song(
@@ -183,7 +224,7 @@ object UniversalPlaylistImporter {
         }
 
         if (songs.isEmpty()) {
-            throw Exception("Could not find any tracks in the Apple Music playlist. Please verify the URL is public.")
+            throw Exception("Could not find any tracks in the Apple Music playlist or album. Please verify the URL is public.")
         }
 
         return UniversalPlaylist(
@@ -203,8 +244,10 @@ object UniversalPlaylistImporter {
                         ?: element["tracks"]?.jsonArray
                     tracks?.forEach { trackElem ->
                         val trackObj = trackElem.jsonObject
-                        val title = trackObj["name"]?.jsonPrimitive?.contentOrNull ?: return@forEach
-                        val artist = extractArtistName(trackObj["byArtist"]) ?: "Unknown Artist"
+                        val rawTitle = trackObj["name"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+                        val title = unescapeHtml(rawTitle)
+                        val rawArtist = extractArtistName(trackObj["byArtist"]) ?: "Unknown Artist"
+                        val artist = unescapeHtml(rawArtist)
                         val durationStr = trackObj["duration"]?.jsonPrimitive?.contentOrNull
                         val durationSec = parseIsoDuration(durationStr)
 
@@ -247,7 +290,8 @@ object UniversalPlaylistImporter {
 
         val ogTitle = Regex("""<meta property="og:title" content="([^"]+)"""").find(html)?.groupValues?.get(1)
         val ogImage = Regex("""<meta property="og:image" content="([^"]+)"""").find(html)?.groupValues?.get(1)
-        val playlistTitle = ogTitle?.substringBefore(" on Amazon")?.substringBefore(" - ") ?: "Amazon Music Playlist"
+        val rawTitle = ogTitle?.substringBefore(" on Amazon")?.substringBefore(" - ") ?: "Amazon Music Playlist"
+        val playlistTitle = unescapeHtml(rawTitle)
 
         val songs = mutableListOf<Song>()
 
@@ -265,8 +309,8 @@ object UniversalPlaylistImporter {
         if (songs.isEmpty()) {
             val trackRegex = Regex("""data-item-title="([^"]+)".*?data-item-artist="([^"]+)"""", RegexOption.DOT_MATCHES_ALL)
             trackRegex.findAll(html).forEach { match ->
-                val title = match.groupValues[1].trim()
-                val artist = match.groupValues[2].trim()
+                val title = unescapeHtml(match.groupValues[1].trim())
+                val artist = unescapeHtml(match.groupValues[2].trim())
                 if (title.isNotBlank()) {
                     songs.add(
                         Song(

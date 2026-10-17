@@ -1,7 +1,23 @@
 {
-  "description": "BeatWave 6.1.1 — smart shuffle overhaul, intelligent genre/automix radio loading, seamless continuous playback without repeating, and performance optimizations.",
+  "description": "BeatWave 6.1.1 — Universal playlist & album import (Spotify, Apple Music, Amazon Music), Spotify account login & dual Wrapped playback sync, Liked Songs import fix, smart shuffle overhaul, and overall performance optimizations.",
   "image": "",
   "changelog": [
+    {
+      "title": "Universal Playlist & Album Importer",
+      "items": [
+        "Import playlists and albums from Spotify, Apple Music, and Amazon Music simply by pasting their public share links.",
+        "High-accuracy track matching with automatic HTML entity unescaping, cover art retrieval, and instant progress dialogs.",
+        "Batch database insertion and in-memory search query caching for blazing-fast imports without freezing playback or UI."
+      ]
+    },
+    {
+      "title": "Spotify Account & Dual Wrapped Sync",
+      "items": [
+        "Connect your Spotify account directly in Settings > Account alongside YouTube Music with one-tap login/logout.",
+        "Dual Wrapped Playback Sync: songs played in BeatWave now automatically sync with both your YouTube Music Recap and Spotify Wrapped / Recently Played.",
+        "Completely fixed Spotify Liked Songs import with robust OAuth token refreshing and multi-tier GraphQL fallback."
+      ]
+    },
     {
       "title": "Smart Shuffle & Infinite Genre Automix",
       "items": [
