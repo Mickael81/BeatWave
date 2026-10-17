@@ -398,7 +398,7 @@ fun MorphingCoverArt(
         if (!curUrl.isNullOrBlank()) {
             var activeCurUrl by remember(curUrl) { mutableStateOf<String?>(curUrl) }
             val inAlpha = if (outgoingUrl != null && !crossfadeBurnMorph) p.coerceIn(0f, 1f) else 1f
-            val inTranslateY = if (outgoingUrl != null) with(LocalDensity.current) { ((1f - p) * 16.dp).toPx() } else 0f
+            val inTranslateY = if (outgoingUrl != null) with(LocalDensity.current) { (16.dp * (1f - p)).toPx() } else 0f
             val inScale = if (outgoingUrl != null) (0.95f + (0.05f * p)) else 1f
 
             // Chromatic aberration morph effect during track transition (matching convxdemo.mp4)

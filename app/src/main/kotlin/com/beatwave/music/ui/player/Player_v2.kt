@@ -1326,9 +1326,10 @@ fun PlayerV2(
             AudioDeviceBottomSheet(onDismiss = { showAudioDeviceBottomSheet = false })
         }
 
-        if (showDynamicMashupDialog && mediaMetadata != null) {
+        val currentMeta = mediaMetadata
+        if (showDynamicMashupDialog && currentMeta != null) {
             DynamicMashupDialog(
-                initialSong = mediaMetadata,
+                initialSong = currentMeta,
                 onDismiss = { showDynamicMashupDialog = false }
             )
         }
