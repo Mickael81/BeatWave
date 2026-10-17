@@ -9,11 +9,13 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -96,13 +99,32 @@ fun DynamicMashupDialog(
     val allLibrarySongs by database.allSongs().collectAsState(initial = emptyList())
     val likedSongs by database.likedSongsByCreateDateAsc().collectAsState(initial = emptyList())
     val queueWindows by (playerConnection?.queueWindows ?: MutableStateFlow(emptyList())).collectAsState()
-    val queueSongs = remember(queueWindows) {
-        queueWindows.mapNotNull { it.mediaItem.metadata }.distinctBy { it.id }
+    val queueSongs = remember(queueWindows, allLibrarySongs) {
+        val songMap = allLibrarySongs.associateBy { it.id }
+        val fromWindows = queueWindows.mapNotNull { window ->
+            window.mediaItem.metadata ?: songMap[window.mediaItem.mediaId]?.toMediaMetadata()
+        }
+        val fromPlayer = try {
+            playerConnection?.player?.let { p ->
+                (0 until p.mediaItemCount).mapNotNull { idx ->
+                    val item = p.getMediaItemAt(idx)
+                    item.metadata ?: songMap[item.mediaId]?.toMediaMetadata()
+                }
+            }.orEmpty()
+        } catch (e: Exception) {
+            emptyList()
+        }
+        (fromWindows + fromPlayer).distinctBy { it.id }
     }
 
     val selectedTracks = remember { mutableStateListOf(initialSong) }
     var selectedStyle by remember { mutableStateOf(MashupTransitionStyle.LINE_BY_LINE) }
-    var activeSourceTab by remember { mutableStateOf("ALL") }
+    var activeSourceTab by remember { mutableStateOf(if (queueSongs.isNotEmpty()) "QUEUE" else "ALL") }
+    LaunchedEffect(queueSongs) {
+        if (queueSongs.isNotEmpty() && activeSourceTab == "ALL") {
+            activeSourceTab = "QUEUE"
+        }
+    }
     var searchQuery by remember { mutableStateOf("") }
     var onlineResults by remember { mutableStateOf<List<MediaMetadata>>(emptyList()) }
     var isSearchingOnline by remember { mutableStateOf(false) }
@@ -199,12 +221,67 @@ fun DynamicMashupDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Selected Tracks Slots Display (Max 4)
-                Text(
-                    text = "Selected Tracks (Anchor + up to 3 more)",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Selected Tracks (Anchor + up to 3 more)",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (queueSongs.isNotEmpty() && selectedTracks.size < 4) {
+                            TextButton(
+                                onClick = {
+                                    val availableFromQueue = queueSongs.filter { qSong -> selectedTracks.none { it.id == qSong.id } }
+                                    val slotsNeeded = 4 - selectedTracks.size
+                                    val toAdd = availableFromQueue.take(slotsNeeded)
+                                    if (toAdd.isNotEmpty()) {
+                                        selectedTracks.addAll(toAdd)
+                                        Toast.makeText(context, "Filled ${toAdd.size} slot(s) from Queue", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "All queue songs already added", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.queue_music),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Fill from Queue",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        if (selectedTracks.size > 1) {
+                            TextButton(
+                                onClick = {
+                                    val anchor = selectedTracks.first()
+                                    selectedTracks.clear()
+                                    selectedTracks.add(anchor)
+                                    Toast.makeText(context, "Reset to Anchor track only", Toast.LENGTH_SHORT).show()
+                                },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "Clear Slots",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Column(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -320,7 +397,12 @@ fun DynamicMashupDialog(
                                 shape = RoundedCornerShape(10.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        activeSourceTab = "QUEUE"
+                                        Toast.makeText(context, "Select a song from Queue below for Slot ${slotIndex + 1}", Toast.LENGTH_SHORT).show()
+                                    }
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -341,9 +423,10 @@ fun DynamicMashupDialog(
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
-                                        text = "+ Tap a track below to add slot ${slotIndex + 1}",
+                                        text = "+ Tap to select from Queue for Slot ${slotIndex + 1}",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                                        fontWeight = FontWeight.Medium
                                     )
                                 }
                             }
@@ -393,17 +476,28 @@ fun DynamicMashupDialog(
                 // Source Tabs
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
                 ) {
                     listOf(
-                        "ALL" to "All",
                         "QUEUE" to "Queue (${queueSongs.size})",
+                        "ALL" to "All",
                         "LIKED" to "Liked (${likedSongs.size})",
                         "LIBRARY" to "Library (${allLibrarySongs.size})"
                     ).forEach { (key, label) ->
                         FilterChip(
                             selected = activeSourceTab == key,
                             onClick = { activeSourceTab = key },
+                            leadingIcon = if (key == "QUEUE") {
+                                {
+                                    Icon(
+                                        painter = painterResource(R.drawable.queue_music),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            } else null,
                             label = {
                                 Text(
                                     text = label,
@@ -469,13 +563,13 @@ fun DynamicMashupDialog(
                     }
 
                     if (q.isEmpty()) {
-                        baseList.take(50)
+                        baseList.take(60)
                     } else {
                         val localMatches = baseList.filter { meta ->
                             meta.title.contains(q, ignoreCase = true) ||
                                 meta.artists.any { it.name.contains(q, ignoreCase = true) }
                         }
-                        (localMatches + onlineResults).distinctBy { it.id }.take(50)
+                        (localMatches + onlineResults).distinctBy { it.id }.take(60)
                     }
                 }
 
@@ -496,6 +590,7 @@ fun DynamicMashupDialog(
                                 Text(
                                     text = if (isSearchingOnline) "Searching online..."
                                     else if (searchQuery.isNotEmpty()) "No matching songs found"
+                                    else if (activeSourceTab == "QUEUE") "No songs found in current queue"
                                     else "No songs in queue or library yet",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -507,6 +602,7 @@ fun DynamicMashupDialog(
                             val isSelected = selectedTracks.any { it.id == meta.id }
                             val isAnchor = selectedTracks.firstOrNull()?.id == meta.id
                             val slotIndex = selectedTracks.indexOfFirst { it.id == meta.id }
+                            val queueIdx = queueSongs.indexOfFirst { it.id == meta.id }
 
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
@@ -519,11 +615,14 @@ fun DynamicMashupDialog(
                                             Toast.makeText(context, "Anchor track is required for tempo reference", Toast.LENGTH_SHORT).show()
                                         } else if (isSelected) {
                                             selectedTracks.removeAll { it.id == meta.id }
+                                            Toast.makeText(context, "Removed ${meta.title} from mashup", Toast.LENGTH_SHORT).show()
                                         } else {
-                                            if (selectedTracks.size >= 4) {
-                                                Toast.makeText(context, "Maximum 4 tracks allowed in Dynamic Mashup", Toast.LENGTH_SHORT).show()
-                                            } else {
+                                            if (selectedTracks.size < 4) {
                                                 selectedTracks.add(meta)
+                                                Toast.makeText(context, "Added to Slot ${selectedTracks.size}", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                selectedTracks[3] = meta
+                                                Toast.makeText(context, "Replaced Slot 4 with ${meta.title}", Toast.LENGTH_SHORT).show()
                                             }
                                         }
                                     }
@@ -542,13 +641,32 @@ fun DynamicMashupDialog(
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = meta.title,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = meta.title,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f, fill = false)
+                                            )
+                                            if (queueIdx >= 0) {
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Surface(
+                                                    shape = RoundedCornerShape(4.dp),
+                                                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f)
+                                                ) {
+                                                    Text(
+                                                        text = "Queue #${queueIdx + 1}",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
                                         Text(
                                             text = meta.artists.joinToString(", ") { it.name },
                                             style = MaterialTheme.typography.bodySmall,
