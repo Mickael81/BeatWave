@@ -825,6 +825,19 @@ class MainActivity : ComponentActivity() {
                         }
                     )
             ) {
+                // App Startup Animated Splash Overlay & Opening Entrance Animation
+                var showAppSplash by remember { mutableStateOf(!hasShownStartupSplash) }
+                val appEntranceScale by animateFloatAsState(
+                    targetValue = if (showAppSplash) 0.95f else 1.0f,
+                    animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing),
+                    label = "appEntranceScale"
+                )
+                val appEntranceAlpha by animateFloatAsState(
+                    targetValue = if (showAppSplash) 0f else 1.0f,
+                    animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
+                    label = "appEntranceAlpha"
+                )
+
                 val focusManager = LocalFocusManager.current
                 val density = LocalDensity.current
                 val configuration = LocalWindowInfo.current
@@ -1706,27 +1719,7 @@ class MainActivity : ComponentActivity() {
                     LocalDownloads provides downloadUtil.downloads.collectAsState().value,
                 ) {
 
-                    // App Startup Animated Splash Overlay & Opening Entrance Animation
-                    var showAppSplash by remember { mutableStateOf(!hasShownStartupSplash) }
-                    val appEntranceScale by animateFloatAsState(
-                        targetValue = if (showAppSplash) 0.95f else 1.0f,
-                        animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing),
-                        label = "appEntranceScale"
-                    )
-                    val appEntranceAlpha by animateFloatAsState(
-                        targetValue = if (showAppSplash) 0f else 1.0f,
-                        animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
-                        label = "appEntranceAlpha"
-                    )
-
                     Scaffold(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                scaleX = appEntranceScale
-                                scaleY = appEntranceScale
-                                alpha = appEntranceAlpha
-                            },
                         snackbarHost = { SnackbarHost(snackbarHostState) },
                         topBar = {
                             AnimatedVisibility(
@@ -2115,7 +2108,13 @@ class MainActivity : ComponentActivity() {
                         },
                         modifier = Modifier
                             .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = appEntranceScale
+                                scaleY = appEntranceScale
+                                alpha = appEntranceAlpha
+                            }
                             .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+
                     ) {
                         Box(Modifier.fillMaxSize()) {
                             val onRailItemClick: (Screens, Boolean) -> Unit = remember(navController, coroutineScope, topAppBarScrollBehavior, playerBottomSheetState, enterSearch) {
