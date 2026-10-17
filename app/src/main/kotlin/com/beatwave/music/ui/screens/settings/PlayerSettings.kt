@@ -513,8 +513,8 @@ fun PlayerSettings(
                 }
                 add(Material3SettingsItem(
                     icon = painterResource(R.drawable.sparks),
-                    title = { Text("Burning Morph Animation") },
-                    description = { Text("Album cover burns away into next song as soon as crossfade begins") },
+                    title = { Text("Artwork Particle Morph") },
+                    description = { Text("Morph artwork with dynamic particles and chromatic dispersion on skip and crossfade") },
                     trailingContent = {
                         Switch(
                             checked = crossfadeBurnMorph,
