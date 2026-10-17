@@ -17,6 +17,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -99,8 +100,19 @@ import com.beatwave.music.ui.player.customize.PlayerIconSlot
 import com.beatwave.music.ui.player.customize.rememberDiyLayout
 import com.beatwave.music.ui.player.customize.DiyOrientation
 import com.beatwave.music.ui.player.customize.DiyDesignCanvas
-import com.beatwave.music.LocalPlayerConnection
 import kotlinx.coroutines.launch
+import com.beatwave.music.constants.AmbientEdgeGlowEnabledKey
+import com.beatwave.music.constants.AmbientEdgeGlowIntensityKey
+import com.beatwave.music.ui.component.AmbientEdgeGlow
+import com.beatwave.music.playback.DynamicMashupController
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import coil3.toBitmap
+import coil3.imageLoader
+import androidx.palette.graphics.Palette
+import com.beatwave.music.ui.theme.PlayerColorExtractor
+import androidx.compose.ui.graphics.toArgb
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 enum class PlayerInternalState { COVER, LYRICS, QUEUE }
 
@@ -230,6 +242,47 @@ fun PlayerV2(
     val (appTextColorInt) = rememberPreference(AppTextColorKey, defaultValue = 0)
     val (showUpNext) = rememberPreference(ShowUpNextKey, defaultValue = false)
     val diyLayout = rememberDiyLayout()
+
+    val ambientEdgeGlowEnabled by rememberPreference(AmbientEdgeGlowEnabledKey, defaultValue = false)
+    val ambientEdgeGlowIntensity by rememberPreference(AmbientEdgeGlowIntensityKey, defaultValue = 0.85f)
+    var gradientColors by remember { mutableStateOf<List<Color>>(emptyList()) }
+    val gradientColorsCache = remember { mutableMapOf<String, List<Color>>() }
+
+    LaunchedEffect(mediaMetadata?.id, ambientEdgeGlowEnabled) {
+        if (ambientEdgeGlowEnabled) {
+            val currentMetadata = mediaMetadata
+            if (currentMetadata != null && currentMetadata.thumbnailUrl != null) {
+                val cached = gradientColorsCache[currentMetadata.id]
+                if (cached != null) {
+                    gradientColors = cached
+                    return@LaunchedEffect
+                }
+                withContext(Dispatchers.IO) {
+                    val request = ImageRequest.Builder(context)
+                        .data(currentMetadata.thumbnailUrl)
+                        .size(100, 100)
+                        .allowHardware(false)
+                        .build()
+                    val result = runCatching { context.imageLoader.execute(request) }.getOrNull()
+                    if (result != null) {
+                        val bitmap = result.image?.toBitmap()
+                        if (bitmap != null) {
+                            val palette = Palette.from(bitmap)
+                                .maximumColorCount(8)
+                                .resizeBitmapArea(100 * 100)
+                                .generate()
+                            val fallbackColor = PlayerColorExtractor.NeutralFallbackColor.toArgb()
+                            val extracted = PlayerColorExtractor.extractGradientColors(palette, fallbackColor)
+                            gradientColorsCache[currentMetadata.id] = extracted
+                            withContext(Dispatchers.Main) { gradientColors = extracted }
+                        }
+                    }
+                }
+            } else {
+                gradientColors = listOf(adaptivePrimary, adaptiveSecondary)
+            }
+        }
+    }
 
     var showAudioDeviceBottomSheet by remember { mutableStateOf(false) }
     
@@ -371,6 +424,16 @@ fun PlayerV2(
                 }
             }
     ) {
+        if (ambientEdgeGlowEnabled) {
+            val safeGlowColors = if (gradientColors.isNotEmpty()) gradientColors else listOf(adaptivePrimary, adaptiveSecondary)
+            AmbientEdgeGlow(
+                colors = safeGlowColors,
+                isPlaying = isPlaying,
+                intensity = ambientEdgeGlowIntensity,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -733,25 +796,94 @@ fun PlayerV2(
                                             modifier = Modifier.fillMaxSize()
                                         )
                                     } else {
+                                        var isQueueFullscreen by remember { mutableStateOf(false) }
                                         val queueSheetState = rememberBottomSheetState(
                                             dismissedBound = 0.dp,
                                             expandedBound = LocalConfiguration.current.screenHeightDp.dp,
                                             initialAnchor = expandedAnchor,
                                         )
-                                        Queue(
-                                            state = queueSheetState,
-                                            playerBottomSheetState = state,
-                                            navController = navController,
-                                            background = Color.Transparent,
-                                            onBackgroundColor = adaptivePrimary,
-                                            TextBackgroundColor = adaptivePrimary,
-                                            textButtonColor = adaptivePrimary,
-                                            iconButtonColor = adaptivePrimary,
-                                            pureBlack = false,
-                                            showInlineLyrics = false,
-                                            playerBackground = playerBackground,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
+
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .pointerInput(Unit) {
+                                                    detectVerticalDragGestures { _, dragAmount ->
+                                                        if (dragAmount > 25f) {
+                                                            playerState = PlayerInternalState.COVER
+                                                            controlsVisible = true
+                                                        }
+                                                    }
+                                                }
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                IconButton(
+                                                    onClick = {
+                                                        playerState = PlayerInternalState.COVER
+                                                        controlsVisible = true
+                                                    },
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.KeyboardArrowDown,
+                                                        contentDescription = "Collapse Queue",
+                                                        tint = adaptivePrimary,
+                                                        modifier = Modifier.size(28.dp)
+                                                    )
+                                                }
+
+                                                Box(
+                                                    modifier = Modifier
+                                                        .width(42.dp)
+                                                        .height(5.dp)
+                                                        .clip(RoundedCornerShape(2.5.dp))
+                                                        .background(adaptivePrimary.copy(alpha = 0.4f))
+                                                        .clickable {
+                                                            playerState = PlayerInternalState.COVER
+                                                            controlsVisible = true
+                                                        }
+                                                )
+
+                                                IconButton(
+                                                    onClick = {
+                                                        isQueueFullscreen = !isQueueFullscreen
+                                                        controlsVisible = !isQueueFullscreen
+                                                    },
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(
+                                                            if (isQueueFullscreen) R.drawable.fullscreen_exit else R.drawable.fullscreen
+                                                        ),
+                                                        contentDescription = if (isQueueFullscreen) "Collapse View" else "Expand Fullscreen",
+                                                        tint = adaptivePrimary,
+                                                        modifier = Modifier.size(22.dp)
+                                                    )
+                                                }
+                                            }
+
+                                            Queue(
+                                                state = queueSheetState,
+                                                playerBottomSheetState = state,
+                                                navController = navController,
+                                                background = Color.Transparent,
+                                                onBackgroundColor = adaptivePrimary,
+                                                TextBackgroundColor = adaptivePrimary,
+                                                textButtonColor = adaptivePrimary,
+                                                iconButtonColor = adaptivePrimary,
+                                                pureBlack = false,
+                                                showInlineLyrics = false,
+                                                playerBackground = playerBackground,
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .weight(1f)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -779,6 +911,65 @@ fun PlayerV2(
                             )
                             .padding(horizontal = 24.dp)
                     ) {
+                        // Live DJ Mashup Deck Banner
+                        if (DynamicMashupController.isActive) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.equalizer),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Column {
+                                            Text(
+                                                text = "DJ MASHUP LIVE • ${DynamicMashupController.currentStyle.title}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                            Text(
+                                                text = "Phrase cut in ${DynamicMashupController.secondsRemaining}s • Swaps: ${DynamicMashupController.totalSwaps}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontSize = 10.sp,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                            )
+                                        }
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        TextButton(
+                                            onClick = { DynamicMashupController.triggerImmediateCut() },
+                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 1.dp)
+                                        ) {
+                                            Text("Cut Now", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                        }
+                                        IconButton(
+                                            onClick = { DynamicMashupController.stopMashup() },
+                                            modifier = Modifier.size(22.dp)
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.close),
+                                                contentDescription = "Stop Mashup",
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         // Apple Music Timeline Slider
                     val currentPos = sliderPosition ?: position
                     

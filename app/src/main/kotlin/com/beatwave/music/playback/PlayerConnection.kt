@@ -174,6 +174,8 @@ class PlayerConnection(
 
     val error = MutableStateFlow<PlaybackException?>(null)
     val isMuted = service.isMuted
+    val isCrossfading = service.isCrossfadingFlow
+    val crossfadeDurationMs: Float get() = service.crossfadeDuration
 
     val waitingForNetworkConnection = service.waitingForNetworkConnection
     

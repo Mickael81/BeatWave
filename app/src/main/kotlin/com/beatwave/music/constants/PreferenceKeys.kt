@@ -262,6 +262,7 @@ val CrossfadeDurationKey = floatPreferencesKey("crossfadeDuration")
 val CrossfadeGaplessKey = booleanPreferencesKey("crossfadeGapless")
 val ManualCrossfadeEnabledKey = booleanPreferencesKey("manualCrossfadeEnabled")
 val ManualCrossfadeDurationKey = floatPreferencesKey("manualCrossfadeDuration")
+val CrossfadeBurnMorphKey = booleanPreferencesKey("crossfadeBurnMorph")
 val OfflineSyncEnabledKey = booleanPreferencesKey("offlineSyncEnabled")
 
 

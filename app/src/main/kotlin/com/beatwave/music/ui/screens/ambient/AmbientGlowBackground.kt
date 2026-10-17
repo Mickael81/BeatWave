@@ -83,8 +83,20 @@ fun AmbientGlowBackground(
         }
     }
 
+    val safeColors = remember(gradientColors) {
+        if (gradientColors.size >= 2) gradientColors
+        else listOf(
+            Color(0xFF5E35B1),
+            Color(0xFF1E88E5),
+            Color(0xFF00897B),
+            Color(0xFFD81B60),
+            Color(0xFFFB8C00),
+            Color(0xFF3949AB)
+        )
+    }
+
     AnimatedContent(
-        targetState = gradientColors,
+        targetState = safeColors,
         transitionSpec = {
             fadeIn(tween(1200)) togetherWith fadeOut(tween(1200))
         },

@@ -418,6 +418,8 @@ class MusicService :
     private var secondaryPlayer: ExoPlayer? = null
     private var fadingPlayer: ExoPlayer? = null
     private var isCrossfading = false
+    private val _isCrossfadingFlow = MutableStateFlow(false)
+    val isCrossfadingFlow: kotlinx.coroutines.flow.StateFlow<Boolean> = _isCrossfadingFlow.asStateFlow()
     private var crossfadeJob: Job? = null
     private var duckVolumeRestoreJob: Job? = null
 
@@ -4282,8 +4284,32 @@ class MusicService :
         secPlayer.repeatMode = savedRepeatMode
         secPlayer.shuffleModeEnabled = savedShuffleEnabled
 
+        val outgoingMediaId = player.currentMediaItem?.mediaId
+        val incomingMediaId = player.getMediaItemAt(targetIndex).mediaId
+        val djMixPlan = if (djEngine.enabled) {
+            outgoingMediaId?.let { djEngine.captureEnergyProfile(player, it) }
+            djEngine.planTransition(
+                outgoingMediaId,
+                incomingMediaId,
+                outgoingDurationMs = player.duration.takeIf { it != C.TIME_UNSET } ?: 0L,
+            )
+        } else null
+
+        djMixPlan?.let { plan ->
+            if (plan.tier != com.beatwave.music.playback.dj.DjMixTier.PLAIN_CROSSFADE) {
+                secPlayer.playbackParameters =
+                    androidx.media3.common.PlaybackParameters(plan.incomingSpeedAdjustment, plan.incomingPitchAdjustment)
+            }
+        }
+
         secPlayer.prepare()
-        secPlayer.playWhenReady = true
+        if (djMixPlan != null && djMixPlan.tier != com.beatwave.music.playback.dj.DjMixTier.PLAIN_CROSSFADE) {
+            djEngine.armIncomingFilter(secPlayer)
+            djEngine.startTailEffect(player, transitionDurationMs)
+            startIncomingOnBeat(secPlayer, djMixPlan, outgoingMediaId)
+        } else {
+            secPlayer.playWhenReady = true
+        }
 
         performCrossfadeSwap(transitionDurationMs)
 
@@ -4379,6 +4405,7 @@ class MusicService :
 
     private fun performCrossfadeSwap(durationMs: Long = crossfadeDuration.toLong()) {
         isCrossfading = true
+        _isCrossfadingFlow.value = true
         val nextPlayer = secondaryPlayer ?: return
         val currentPlayer = player
 
@@ -4485,6 +4512,7 @@ class MusicService :
         fadingPlayer?.release()
         fadingPlayer = null
         isCrossfading = false
+        _isCrossfadingFlow.value = false
         sleepTimer.notifySongTransition()
 
         // Tempo correction (if any) was only meant for the transition itself â€”

@@ -86,6 +86,7 @@ import com.beatwave.music.constants.AutoLoadMoreKey
 import com.beatwave.music.constants.AutoSkipNextOnErrorKey
 import com.beatwave.music.constants.CompactPlayerInTabViewKey
 import com.beatwave.music.constants.CreativeTransitionsEnabledKey
+import com.beatwave.music.constants.CrossfadeBurnMorphKey
 import com.beatwave.music.constants.CrossfadeDurationKey
 import com.beatwave.music.constants.CrossfadeEnabledKey
 import com.beatwave.music.constants.CrossfadeGaplessKey
@@ -153,6 +154,10 @@ fun PlayerSettings(
     val (manualCrossfadeDuration, onManualCrossfadeDurationChange) = rememberPreference(
         ManualCrossfadeDurationKey,
         defaultValue = 3f
+    )
+    val (crossfadeBurnMorph, onCrossfadeBurnMorphChange) = rememberPreference(
+        CrossfadeBurnMorphKey,
+        defaultValue = true
     )
     val (creativeTransitionsEnabled, onCreativeTransitionsEnabledChange) = rememberPreference(
         CreativeTransitionsEnabledKey,
@@ -506,6 +511,27 @@ fun PlayerSettings(
                         }
                     ))
                 }
+                add(Material3SettingsItem(
+                    icon = painterResource(R.drawable.sparks),
+                    title = { Text("Burning Morph Animation") },
+                    description = { Text("Album cover burns away into next song as soon as crossfade begins") },
+                    trailingContent = {
+                        Switch(
+                            checked = crossfadeBurnMorph,
+                            onCheckedChange = onCrossfadeBurnMorphChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (crossfadeBurnMorph) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onCrossfadeBurnMorphChange(!crossfadeBurnMorph) }
+                ))
                 // Auto-DJ Mixing needs crossfade on (it beatmatches into the crossfade
                 // window); Creative Transitions needs Auto-DJ Mixing on (its effects run
                 // inside a DJ-mixed transition). Turning the dependency off cascades down

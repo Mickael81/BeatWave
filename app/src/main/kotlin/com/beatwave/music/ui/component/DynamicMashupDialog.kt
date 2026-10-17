@@ -93,6 +93,7 @@ fun DynamicMashupDialog(
     val playerConnection = LocalPlayerConnection.current
 
     val allLibrarySongs by database.allSongs().collectAsState(initial = emptyList())
+    val likedSongs by database.likedSongsByCreateDateAsc().collectAsState(initial = emptyList())
     val queueWindows by (playerConnection?.queueWindows ?: MutableStateFlow(emptyList())).collectAsState()
     val queueSongs = remember(queueWindows) {
         queueWindows.mapNotNull { it.mediaItem.metadata }.distinctBy { it.id }
@@ -100,14 +101,16 @@ fun DynamicMashupDialog(
 
     val selectedTracks = remember { mutableStateListOf(initialSong) }
     var selectedStyle by remember { mutableStateOf(MashupTransitionStyle.LINE_BY_LINE) }
+    var activeSourceTab by remember { mutableStateOf("ALL") }
     var searchQuery by remember { mutableStateOf("") }
     var onlineResults by remember { mutableStateOf<List<MediaMetadata>>(emptyList()) }
     var isSearchingOnline by remember { mutableStateOf(false) }
 
     // Auto-populate Slot 2 from queue or library so user can mix in 1 click
-    LaunchedEffect(queueSongs, allLibrarySongs) {
+    LaunchedEffect(queueSongs, likedSongs, allLibrarySongs) {
         if (selectedTracks.size == 1) {
             val candidate = queueSongs.firstOrNull { it.id != initialSong.id }
+                ?: likedSongs.firstOrNull { it.id != initialSong.id }?.toMediaMetadata()
                 ?: allLibrarySongs.firstOrNull { it.id != initialSong.id }?.toMediaMetadata()
             if (candidate != null && selectedTracks.none { it.id == candidate.id }) {
                 selectedTracks.add(candidate)
@@ -281,6 +284,23 @@ fun DynamicMashupDialog(
                                     }
                                     if (slotIndex > 0) {
                                         IconButton(
+                                            onClick = {
+                                                // Swap track with slot 0 so it becomes Anchor!
+                                                val currentAnchor = selectedTracks[0]
+                                                selectedTracks[0] = track
+                                                selectedTracks[slotIndex] = currentAnchor
+                                                Toast.makeText(context, "${track.title} is now the Anchor BPM track", Toast.LENGTH_SHORT).show()
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.equalizer),
+                                                contentDescription = "Set as Anchor",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                        IconButton(
                                             onClick = { selectedTracks.remove(track) },
                                             modifier = Modifier.size(28.dp)
                                         ) {
@@ -369,13 +389,42 @@ fun DynamicMashupDialog(
                     fontSize = 11.sp
                 )
 
+                // Source Tabs
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    listOf(
+                        "ALL" to "All",
+                        "QUEUE" to "Queue (${queueSongs.size})",
+                        "LIKED" to "Liked (${likedSongs.size})",
+                        "LIBRARY" to "Library (${allLibrarySongs.size})"
+                    ).forEach { (key, label) ->
+                        FilterChip(
+                            selected = activeSourceTab == key,
+                            onClick = { activeSourceTab = key },
+                            label = {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (activeSourceTab == key) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        )
+                    }
+                }
+
                 // Search Candidate Songs
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     placeholder = {
                         Text(
-                            text = "Search songs in library to add...",
+                            text = "Search songs in library or YouTube...",
                             style = MaterialTheme.typography.bodySmall
                         )
                     },
@@ -408,14 +457,20 @@ fun DynamicMashupDialog(
                     )
                 )
 
-                // Candidate Songs List (Queue + Library + Online YouTube Results)
-                val candidateSongs = remember(allLibrarySongs, queueSongs, onlineResults, searchQuery) {
+                // Candidate Songs List (Queue + Liked + Library + Online YouTube Results)
+                val candidateSongs = remember(allLibrarySongs, likedSongs, queueSongs, onlineResults, searchQuery, activeSourceTab) {
                     val q = searchQuery.trim()
-                    val localList = (queueSongs + allLibrarySongs.map { it.toMediaMetadata() }).distinctBy { it.id }
+                    val baseList: List<MediaMetadata> = when (activeSourceTab) {
+                        "QUEUE" -> queueSongs
+                        "LIKED" -> likedSongs.map { it.toMediaMetadata() }
+                        "LIBRARY" -> allLibrarySongs.map { it.toMediaMetadata() }
+                        else -> (queueSongs + likedSongs.map { it.toMediaMetadata() } + allLibrarySongs.map { it.toMediaMetadata() }).distinctBy { it.id }
+                    }
+
                     if (q.isEmpty()) {
-                        localList.take(40)
+                        baseList.take(50)
                     } else {
-                        val localMatches = localList.filter { meta ->
+                        val localMatches = baseList.filter { meta ->
                             meta.title.contains(q, ignoreCase = true) ||
                                 meta.artists.any { it.name.contains(q, ignoreCase = true) }
                         }
@@ -450,6 +505,7 @@ fun DynamicMashupDialog(
                         items(candidateSongs, key = { it.id }) { meta ->
                             val isSelected = selectedTracks.any { it.id == meta.id }
                             val isAnchor = selectedTracks.firstOrNull()?.id == meta.id
+                            val slotIndex = selectedTracks.indexOfFirst { it.id == meta.id }
 
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
@@ -502,6 +558,19 @@ fun DynamicMashupDialog(
                                     }
                                     Spacer(modifier = Modifier.width(6.dp))
                                     if (isSelected) {
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = if (isAnchor) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.padding(end = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = if (isAnchor) "Slot 1 (Anchor)" else "Slot ${slotIndex + 1}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isAnchor) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
                                         Surface(
                                             shape = CircleShape,
                                             color = MaterialTheme.colorScheme.primary,

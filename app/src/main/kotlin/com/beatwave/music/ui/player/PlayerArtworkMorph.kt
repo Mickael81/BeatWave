@@ -55,6 +55,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.beatwave.music.R
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size as GeometrySize
+import androidx.compose.ui.graphics.Brush
+import com.beatwave.music.LocalPlayerConnection
+import com.beatwave.music.constants.CrossfadeBurnMorphKey
+import com.beatwave.music.utils.rememberPreference
+import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * Registered bounds of the mini player's own artwork and the full player's own artwork,
@@ -222,9 +232,79 @@ fun Modifier.hideWhileArtworkMorphing(progress: () -> Float): Modifier = graphic
 }
 
 /**
+ * Renders an intense burning/dissolving wavefront with glowing incandescent embers and drifting sparks.
+ */
+@Composable
+fun MorphingBurnOverlay(
+    progress: Float,
+    modifier: Modifier = Modifier
+) {
+    if (progress <= 0.01f || progress >= 0.99f) return
+
+    val density = LocalDensity.current
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val w = size.width
+        val h = size.height
+
+        val burnY = h * (1f - progress)
+        val flameHeight = h * 0.22f
+        val peakIntensity = kotlin.math.sin(progress * Math.PI.toFloat())
+
+        // Hot incandescent flame boundary gradient
+        val flameBrush = Brush.verticalGradient(
+            colors = listOf(
+                Color.Transparent,
+                Color(0xFFFF1744).copy(alpha = 0.55f * peakIntensity),
+                Color(0xFFFF6D00).copy(alpha = 0.85f * peakIntensity),
+                Color(0xFFFFEA00).copy(alpha = 0.95f * peakIntensity),
+                Color(0xFFFFFFFF).copy(alpha = 0.85f * peakIntensity),
+                Color(0xFFFF6D00).copy(alpha = 0.75f * peakIntensity),
+                Color(0xFF210500).copy(alpha = 0.90f * peakIntensity),
+                Color.Transparent
+            ),
+            startY = (burnY - flameHeight).coerceAtLeast(0f),
+            endY = (burnY + flameHeight * 0.6f).coerceAtMost(h)
+        )
+
+        drawRect(
+            brush = flameBrush,
+            topLeft = Offset(0f, (burnY - flameHeight).coerceAtLeast(0f)),
+            size = GeometrySize(w, flameHeight * 1.6f),
+            blendMode = BlendMode.Screen
+        )
+
+        // Flying fiery sparks and embers rising from burn line
+        val sparkCount = 20
+        for (i in 0 until sparkCount) {
+            val normSeed = (((i * 197) xor (progress * 800).toInt()) and 0x7FFFFFFF) % 1000 / 1000f
+            val sparkX = (i.toFloat() / sparkCount.toFloat()) * w + ((normSeed - 0.5f) * (w * 0.16f))
+            val lift = ((progress * 3.2f + (i * 0.21f)) % 1f)
+            val sparkY = burnY - (lift * h * 0.38f)
+
+            if (sparkY in 0f..h && sparkX in 0f..w) {
+                val sparkAlpha = ((1f - lift) * peakIntensity * 0.9f).coerceIn(0f, 1f)
+                val sparkRadius = with(density) { (1.5f + (normSeed * 2.5f)).dp.toPx() }
+                val sparkColor = when (i % 3) {
+                    0 -> Color(0xFFFFEA00)
+                    1 -> Color(0xFFFF6D00)
+                    else -> Color(0xFFFF1744)
+                }
+
+                drawCircle(
+                    color = sparkColor.copy(alpha = sparkAlpha),
+                    radius = sparkRadius,
+                    center = Offset(sparkX, sparkY),
+                    blendMode = BlendMode.Screen
+                )
+            }
+        }
+    }
+}
+
+/**
  * Renders album cover art that morphs and cross-fades smoothly into the next song's
  * cover art during track changes (both auto-crossfade and manual skip/seek), matching
- * convxdemo.mp4 exactly with a dual-layer pixel-perfect dissolve and chromatic aberration.
+ * convxdemo.mp4 with fluid dissolve, burning away animation, and chromatic aberration.
  */
 @Composable
 fun MorphingCoverArt(
@@ -235,43 +315,35 @@ fun MorphingCoverArt(
     animationDurationMillis: Int = 800,
 ) {
     val context = LocalContext.current
+    val playerConnection = LocalPlayerConnection.current
+    val isCrossfading by (playerConnection?.isCrossfading ?: MutableStateFlow(false)).collectAsState()
+    val crossfadeBurnMorph by rememberPreference(CrossfadeBurnMorphKey, defaultValue = true)
 
     var currentUrl by remember { mutableStateOf(artworkUri) }
     var outgoingUrl by remember { mutableStateOf<String?>(null) }
-    var incomingLoaded by remember { mutableStateOf(false) }
     val progress = remember { Animatable(1f) }
 
-    // When artworkUri changes, stage outgoing artwork and prepare incoming
-    LaunchedEffect(artworkUri) {
-        if (artworkUri != currentUrl) {
+    // Start morphing animation IMMEDIATELY as soon as song starts crossfading or track changes
+    LaunchedEffect(artworkUri, isCrossfading) {
+        if (artworkUri != currentUrl && artworkUri != null) {
             if (currentUrl != null) {
                 outgoingUrl = currentUrl
-                incomingLoaded = false
                 progress.snapTo(0f)
+                val effectiveDuration = if (isCrossfading) {
+                    (playerConnection?.crossfadeDurationMs ?: 3000f).toInt().coerceIn(1200, 5000)
+                } else {
+                    animationDurationMillis
+                }
+                progress.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(
+                        durationMillis = effectiveDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+                outgoingUrl = null
             }
             currentUrl = artworkUri
-        }
-    }
-
-    // Safety timeout: if incoming image takes longer than 600ms, start morphing anyway
-    LaunchedEffect(currentUrl, outgoingUrl) {
-        if (outgoingUrl != null && !incomingLoaded) {
-            delay(600L)
-            incomingLoaded = true
-        }
-    }
-
-    // Run the fluid morph animation as soon as the incoming image is decoded/ready
-    LaunchedEffect(incomingLoaded, currentUrl, outgoingUrl) {
-        if (incomingLoaded && outgoingUrl != null && progress.value < 1f) {
-            progress.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(
-                    durationMillis = animationDurationMillis,
-                    easing = FastOutSlowInEasing
-                )
-            )
-            outgoingUrl = null
         }
     }
 
@@ -279,14 +351,13 @@ fun MorphingCoverArt(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // Outgoing artwork layer: stays 100% visible while incoming is loading (progress == 0),
-        // then dissolves 1.0f -> 0.0f smoothly with subtle expansive scale for depth
+        // Outgoing artwork layer: burns / dissolves away smoothly
         val outUrl = outgoingUrl
         val p = progress.value
         if (!outUrl.isNullOrBlank() && p < 1f) {
             var activeOutUrl by remember(outUrl) { mutableStateOf<String?>(outUrl) }
-            val outAlpha = (1f - p).coerceIn(0f, 1f)
-            val outScale = 1f + (0.03f * p)
+            val outAlpha = if (crossfadeBurnMorph) (1f - (p * 1.05f)).coerceIn(0f, 1f) else (1f - p).coerceIn(0f, 1f)
+            val outScale = 1f + (0.04f * p)
 
             AsyncImage(
                 model = ImageRequest.Builder(context)
@@ -302,6 +373,23 @@ fun MorphingCoverArt(
                 contentScale = contentScale,
                 modifier = Modifier
                     .fillMaxSize()
+                    .then(
+                        if (crossfadeBurnMorph) {
+                            Modifier.drawWithContent {
+                                drawContent()
+                                val burnY = size.height * (1f - p)
+                                val charHeight = size.height * 0.12f
+                                drawRect(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(Color.Transparent, Color(0xDD210500), Color(0xFF000000)),
+                                        startY = (burnY - charHeight).coerceAtLeast(0f),
+                                        endY = burnY
+                                    ),
+                                    blendMode = BlendMode.SrcAtop
+                                )
+                            }
+                        } else Modifier
+                    )
                     .graphicsLayer {
                         alpha = outAlpha
                         scaleX = outScale
@@ -314,8 +402,8 @@ fun MorphingCoverArt(
         val curUrl = currentUrl
         if (!curUrl.isNullOrBlank()) {
             var activeCurUrl by remember(curUrl) { mutableStateOf<String?>(curUrl) }
-            val inAlpha = if (outgoingUrl != null) p.coerceIn(0f, 1f) else 1f
-            val inScale = if (outgoingUrl != null) (0.96f + (0.04f * p)) else 1f
+            val inAlpha = if (outgoingUrl != null) (p * 1.15f).coerceIn(0f, 1f) else 1f
+            val inScale = if (outgoingUrl != null) (0.95f + (0.05f * p)) else 1f
 
             // Chromatic aberration morph effect during track transition (matching convxdemo.mp4)
             val isMorphing = outgoingUrl != null && p in 0.02f..0.98f
@@ -380,10 +468,8 @@ fun MorphingCoverArt(
                     .diskCachePolicy(CachePolicy.ENABLED)
                     .networkCachePolicy(CachePolicy.ENABLED)
                     .build(),
-                onSuccess = { incomingLoaded = true },
                 onError = {
                     activeCurUrl = nextThumbnailFallback(activeCurUrl)
-                    incomingLoaded = true
                 },
                 contentDescription = contentDescription,
                 contentScale = contentScale,
@@ -409,6 +495,14 @@ fun MorphingCoverArt(
                     modifier = Modifier.size(64.dp)
                 )
             }
+        }
+
+        // Burning flame & ember spark overlay when burning morph is enabled
+        if (crossfadeBurnMorph && outgoingUrl != null && p in 0.01f..0.99f) {
+            MorphingBurnOverlay(
+                progress = p,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }

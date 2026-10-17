@@ -50,6 +50,18 @@ object DynamicMashupController {
         MashupTransitionStyle.ACAPELLA_SWAP -> 14 // Swaps hooks every 14s
     }
 
+    val activeTrack: MediaMetadata?
+        get() = tracks.getOrNull(currentTrackIndex)
+
+    val nextTrack: MediaMetadata?
+        get() = if (tracks.size >= 2) tracks.getOrNull((currentTrackIndex + 1) % tracks.size) else null
+
+    fun triggerImmediateCut() {
+        if (isActive && tracks.size >= 2) {
+            swapToNextTrack()
+        }
+    }
+
     fun startMashup(
         selectedTracks: List<MediaMetadata>,
         style: MashupTransitionStyle,
@@ -57,6 +69,12 @@ object DynamicMashupController {
     ) {
         if (selectedTracks.size < 2) return
         stopMashup()
+
+        // Arm DJ engine for beatmatched phrase mixing, tempo/pitch lock & filter sweeps
+        runCatching {
+            playerConnection.service.djEngine.enabled = true
+            playerConnection.service.djEngine.creativeEnabled = true
+        }
 
         playerConnectionRef = playerConnection
         tracks = selectedTracks
