@@ -39,6 +39,7 @@ object DynamicMashupController {
     var totalSwaps by mutableIntStateOf(0)
         private set
 
+    private val trackPositions = mutableMapOf<Int, Long>()
     private var mashupJob: Job? = null
     private val scope by lazy { CoroutineScope(Dispatchers.Main.immediate) }
     private var playerConnectionRef: PlayerConnection? = null
@@ -54,7 +55,7 @@ object DynamicMashupController {
         style: MashupTransitionStyle,
         playerConnection: PlayerConnection
     ) {
-        if (selectedTracks.isEmpty()) return
+        if (selectedTracks.size < 2) return
         stopMashup()
 
         playerConnectionRef = playerConnection
@@ -63,6 +64,8 @@ object DynamicMashupController {
         currentTrackIndex = 0
         totalSwaps = 0
         secondsRemaining = getIntervalForStyle(style)
+        trackPositions.clear()
+        selectedTracks.indices.forEach { trackPositions[it] = 0L }
         isActive = true
 
         val mediaItems = selectedTracks.map { it.toMediaItem() }
@@ -95,22 +98,27 @@ object DynamicMashupController {
 
     fun swapToNextTrack() {
         val conn = playerConnectionRef ?: return
-        if (tracks.isEmpty()) return
+        if (tracks.size < 2) return
+
+        // Record current progress before switching so track resumes where it was
+        val curPos = conn.player.currentPosition
+        if (curPos > 0) {
+            trackPositions[currentTrackIndex] = curPos
+        }
 
         val nextIndex = (currentTrackIndex + 1) % tracks.size
-        val currentPos = conn.player.currentPosition
-        val duration = conn.player.duration
-
-        // Maintain continuous phrase flow: jump to corresponding bar
-        val targetPos = if (duration > 0 && currentPos > 0) {
-            (currentPos + 300L).coerceAtMost(duration - 1500L)
-        } else 0L
+        val targetPos = trackPositions[nextIndex] ?: 0L
 
         currentTrackIndex = nextIndex
         totalSwaps++
         secondsRemaining = getIntervalForStyle(currentStyle)
 
-        conn.player.seekTo(nextIndex, targetPos)
+        // Smooth crossfade into the next track at its active phrase
+        conn.service.startManualTrackTransition(
+            targetIndex = nextIndex,
+            startPositionMs = targetPos,
+            transitionDurationMs = 1500L
+        )
     }
 
     fun stopMashup() {
@@ -121,5 +129,6 @@ object DynamicMashupController {
         currentTrackIndex = 0
         totalSwaps = 0
         secondsRemaining = 10
+        trackPositions.clear()
     }
 }

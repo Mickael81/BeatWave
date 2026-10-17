@@ -40,6 +40,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -63,10 +64,17 @@ import coil3.compose.AsyncImage
 import com.beatwave.music.LocalDatabase
 import com.beatwave.music.LocalPlayerConnection
 import com.beatwave.music.R
+import com.beatwave.music.extensions.metadata
 import com.beatwave.music.extensions.toMediaItem
 import com.beatwave.music.models.MediaMetadata
 import com.beatwave.music.models.toMediaMetadata
 import com.beatwave.music.playback.queues.ListQueue
+import com.music.innertube.YouTube
+import com.music.innertube.models.SongItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.withContext
 
 enum class MashupTransitionStyle(val title: String, val subtitle: String) {
     LINE_BY_LINE("Line-by-Line Shuffler", "Alternates verses line-by-line in sync with master BPM"),
@@ -85,9 +93,45 @@ fun DynamicMashupDialog(
     val playerConnection = LocalPlayerConnection.current
 
     val allLibrarySongs by database.allSongs().collectAsState(initial = emptyList())
+    val queueWindows by (playerConnection?.queueWindows ?: MutableStateFlow(emptyList())).collectAsState()
+    val queueSongs = remember(queueWindows) {
+        queueWindows.mapNotNull { it.mediaItem.metadata }.distinctBy { it.id }
+    }
+
     val selectedTracks = remember { mutableStateListOf(initialSong) }
     var selectedStyle by remember { mutableStateOf(MashupTransitionStyle.LINE_BY_LINE) }
     var searchQuery by remember { mutableStateOf("") }
+    var onlineResults by remember { mutableStateOf<List<MediaMetadata>>(emptyList()) }
+    var isSearchingOnline by remember { mutableStateOf(false) }
+
+    // Auto-populate Slot 2 from queue or library so user can mix in 1 click
+    LaunchedEffect(queueSongs, allLibrarySongs) {
+        if (selectedTracks.size == 1) {
+            val candidate = queueSongs.firstOrNull { it.id != initialSong.id }
+                ?: allLibrarySongs.firstOrNull { it.id != initialSong.id }?.toMediaMetadata()
+            if (candidate != null && selectedTracks.none { it.id == candidate.id }) {
+                selectedTracks.add(candidate)
+            }
+        }
+    }
+
+    // Debounced online search if user types in search box
+    LaunchedEffect(searchQuery) {
+        val q = searchQuery.trim()
+        if (q.length >= 2) {
+            delay(350L)
+            isSearchingOnline = true
+            withContext(Dispatchers.IO) {
+                val res = YouTube.search(q, YouTube.SearchFilter.FILTER_SONG).getOrNull()
+                val songItems = res?.items?.filterIsInstance<SongItem>().orEmpty()
+                onlineResults = songItems.map { it.toMediaMetadata() }
+            }
+            isSearchingOnline = false
+        } else {
+            onlineResults = emptyList()
+            isSearchingOnline = false
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -364,15 +408,19 @@ fun DynamicMashupDialog(
                     )
                 )
 
-                // Candidate Songs List
-                val candidateSongs = remember(allLibrarySongs, searchQuery, selectedTracks) {
-                    allLibrarySongs
-                        .filter { song ->
-                            searchQuery.isEmpty() ||
-                                song.song.title.contains(searchQuery, ignoreCase = true) ||
-                                song.artists.any { it.name.contains(searchQuery, ignoreCase = true) }
+                // Candidate Songs List (Queue + Library + Online YouTube Results)
+                val candidateSongs = remember(allLibrarySongs, queueSongs, onlineResults, searchQuery) {
+                    val q = searchQuery.trim()
+                    val localList = (queueSongs + allLibrarySongs.map { it.toMediaMetadata() }).distinctBy { it.id }
+                    if (q.isEmpty()) {
+                        localList.take(40)
+                    } else {
+                        val localMatches = localList.filter { meta ->
+                            meta.title.contains(q, ignoreCase = true) ||
+                                meta.artists.any { it.name.contains(q, ignoreCase = true) }
                         }
-                        .take(40)
+                        (localMatches + onlineResults).distinctBy { it.id }.take(50)
+                    }
                 }
 
                 LazyColumn(
@@ -390,15 +438,16 @@ fun DynamicMashupDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = if (searchQuery.isNotEmpty()) "No matching songs found" else "No songs in library yet",
+                                    text = if (isSearchingOnline) "Searching online..."
+                                    else if (searchQuery.isNotEmpty()) "No matching songs found"
+                                    else "No songs in queue or library yet",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     } else {
-                        items(candidateSongs, key = { it.id }) { song ->
-                            val meta = song.toMediaMetadata()
+                        items(candidateSongs, key = { it.id }) { meta ->
                             val isSelected = selectedTracks.any { it.id == meta.id }
                             val isAnchor = selectedTracks.firstOrNull()?.id == meta.id
 
@@ -493,7 +542,7 @@ fun DynamicMashupDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (playerConnection != null && selectedTracks.isNotEmpty()) {
+                    if (playerConnection != null && selectedTracks.size >= 2) {
                         com.beatwave.music.playback.DynamicMashupController.startMashup(
                             selectedTracks = selectedTracks.toList(),
                             style = selectedStyle,
@@ -504,10 +553,12 @@ fun DynamicMashupDialog(
                             "Dynamic Mashup started! Blending ${selectedTracks.size} tracks with ${selectedStyle.title}",
                             Toast.LENGTH_LONG
                         ).show()
+                        onDismiss()
+                    } else {
+                        Toast.makeText(context, "Please select at least 2 tracks to start mashup", Toast.LENGTH_SHORT).show()
                     }
-                    onDismiss()
                 },
-                enabled = selectedTracks.isNotEmpty(),
+                enabled = selectedTracks.size >= 2,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -521,7 +572,7 @@ fun DynamicMashupDialog(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Launch Dynamic Mashup (${selectedTracks.size} Tracks)",
+                    text = if (selectedTracks.size >= 2) "Launch Dynamic Mashup (${selectedTracks.size} Tracks)" else "Select 2+ tracks to mix",
                     fontWeight = FontWeight.Bold
                 )
             }

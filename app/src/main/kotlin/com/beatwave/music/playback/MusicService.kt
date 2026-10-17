@@ -4251,9 +4251,13 @@ class MusicService :
         }
     }
 
-    fun startManualTrackTransition(targetIndex: Int) {
+    fun startManualTrackTransition(
+        targetIndex: Int,
+        startPositionMs: Long = 0L,
+        transitionDurationMs: Long = manualCrossfadeDuration.toLong(),
+    ) {
         if (isCrossfading) {
-            player.seekTo(targetIndex, 0L)
+            player.seekTo(targetIndex, startPositionMs)
             return
         }
         if (targetIndex < 0 || targetIndex >= player.mediaItemCount) return
@@ -4272,7 +4276,7 @@ class MusicService :
         }
 
         secPlayer.setMediaItems(items)
-        secPlayer.seekTo(targetIndex, 0L)
+        secPlayer.seekTo(targetIndex, startPositionMs)
         secPlayer.volume = 0f
 
         secPlayer.repeatMode = savedRepeatMode
@@ -4281,7 +4285,7 @@ class MusicService :
         secPlayer.prepare()
         secPlayer.playWhenReady = true
 
-        performCrossfadeSwap(manualCrossfadeDuration.toLong())
+        performCrossfadeSwap(transitionDurationMs)
 
         if (savedShuffleEnabled) {
             val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)

@@ -62,6 +62,7 @@ import com.beatwave.music.listentogether.RoomRole
 import com.beatwave.music.models.MediaMetadata
 import com.beatwave.music.playback.ExoDownloadService
 import com.beatwave.music.ui.component.BottomSheetState
+import com.beatwave.music.ui.component.DynamicMashupDialog
 import com.beatwave.music.ui.component.ListDialog
 import com.beatwave.music.ui.component.LocalMenuState
 import com.beatwave.music.ui.component.Material3MenuGroup
@@ -130,6 +131,14 @@ fun OldPlayerMenu(
     var showListenTogetherDialog by rememberSaveable { mutableStateOf(false) }
     var showSelectArtistDialog by rememberSaveable { mutableStateOf(false) }
     var showPitchTempoDialog by rememberSaveable { mutableStateOf(false) }
+    var showDynamicMashupDialog by rememberSaveable { mutableStateOf(false) }
+
+    if (showDynamicMashupDialog) {
+        DynamicMashupDialog(
+            initialSong = mediaMetadata,
+            onDismiss = { showDynamicMashupDialog = false }
+        )
+    }
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
@@ -279,6 +288,18 @@ fun OldPlayerMenu(
                     NewAction(
                         icon = {
                             Icon(
+                                painter = painterResource(R.drawable.equalizer),
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        text = "DJ Mashup",
+                        onClick = { showDynamicMashupDialog = true }
+                    ),
+                    NewAction(
+                        icon = {
+                            Icon(
                                 painter = painterResource(R.drawable.playlist_add),
                                 contentDescription = null,
                                 modifier = Modifier.size(32.dp),
@@ -312,7 +333,7 @@ fun OldPlayerMenu(
                         }
                     )
                 ),
-                columns = if (isListenTogetherGuest) 2 else 3,
+                columns = if (isListenTogetherGuest) 2 else 4,
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
             )
         }
@@ -706,6 +727,22 @@ fun OldPlayerMenu(
                             },
                             onClick = {
                                 showPitchTempoDialog = true
+                            }
+                        )
+                    )
+                    add(
+                        Material3MenuItemData(
+                            title = { Text(text = "🎧 DJ Song Mashup Studio") },
+                            description = { Text(text = "Real-time AI mixing & blending with up to 4 tracks") },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.equalizer),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
+                            onClick = {
+                                showDynamicMashupDialog = true
                             }
                         )
                     )
