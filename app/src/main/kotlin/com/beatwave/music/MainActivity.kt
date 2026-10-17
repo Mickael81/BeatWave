@@ -1706,7 +1706,27 @@ class MainActivity : ComponentActivity() {
                     LocalDownloads provides downloadUtil.downloads.collectAsState().value,
                 ) {
 
+                    // App Startup Animated Splash Overlay & Opening Entrance Animation
+                    var showAppSplash by remember { mutableStateOf(!hasShownStartupSplash) }
+                    val appEntranceScale by animateFloatAsState(
+                        targetValue = if (showAppSplash) 0.95f else 1.0f,
+                        animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing),
+                        label = "appEntranceScale"
+                    )
+                    val appEntranceAlpha by animateFloatAsState(
+                        targetValue = if (showAppSplash) 0f else 1.0f,
+                        animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
+                        label = "appEntranceAlpha"
+                    )
+
                     Scaffold(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = appEntranceScale
+                                scaleY = appEntranceScale
+                                alpha = appEntranceAlpha
+                            },
                         snackbarHost = { SnackbarHost(snackbarHostState) },
                         topBar = {
                             AnimatedVisibility(
@@ -2694,7 +2714,6 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // App Startup Animated Splash Overlay
-                var showAppSplash by remember { mutableStateOf(!hasShownStartupSplash) }
                 if (showAppSplash) {
                     AppStartupSplashScreen(
                         onDismiss = {
@@ -2703,6 +2722,7 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                 }
+
             }
         }
     }
@@ -2815,6 +2835,16 @@ class MainActivity : ComponentActivity() {
         }
 
         var isVisible by remember { mutableStateOf(true) }
+        var emblemEntered by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            emblemEntered = true
+            delay(850L)
+            isVisible = false
+            delay(450L)
+            safeDismiss()
+        }
+
         val alphaAnim by animateFloatAsState(
             targetValue = if (isVisible) 1f else 0f,
             animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
@@ -2823,9 +2853,23 @@ class MainActivity : ComponentActivity() {
         )
 
         val scaleAnim by animateFloatAsState(
-            targetValue = if (isVisible) 1f else 1.12f,
+            targetValue = if (isVisible) 1f else 1.15f,
             animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
             label = "splashScale"
+        )
+
+        val emblemScale by animateFloatAsState(
+            targetValue = if (emblemEntered) 1f else 0.72f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            ),
+            label = "emblemScale"
+        )
+        val emblemAlpha by animateFloatAsState(
+            targetValue = if (emblemEntered) 1f else 0f,
+            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+            label = "emblemAlpha"
         )
 
         val infiniteTransition = rememberInfiniteTransition(label = "pulseRing")
@@ -2867,13 +2911,6 @@ class MainActivity : ComponentActivity() {
             label = "pulseAlpha2"
         )
 
-        LaunchedEffect(Unit) {
-            delay(1200L)
-            isVisible = false
-            delay(500L)
-            safeDismiss()
-        }
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -2898,7 +2935,7 @@ class MainActivity : ComponentActivity() {
                     .graphicsLayer {
                         scaleX = pulseScale2
                         scaleY = pulseScale2
-                        alpha = pulseAlpha2
+                        alpha = pulseAlpha2 * emblemAlpha
                     }
                     .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
             )
@@ -2908,7 +2945,7 @@ class MainActivity : ComponentActivity() {
                     .graphicsLayer {
                         scaleX = pulseScale1
                         scaleY = pulseScale1
-                        alpha = pulseAlpha1
+                        alpha = pulseAlpha1 * emblemAlpha
                     }
                     .border(2.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
             )
@@ -2916,7 +2953,12 @@ class MainActivity : ComponentActivity() {
             // Center BeatWave Emblem Card
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.graphicsLayer {
+                    scaleX = emblemScale
+                    scaleY = emblemScale
+                    alpha = emblemAlpha
+                }
             ) {
                 Surface(
                     shape = CircleShape,
@@ -2953,13 +2995,13 @@ class MainActivity : ComponentActivity() {
                 Text(
                     text = "SOUND IN MOTION",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )
             }
         }
     }
+
 
     @SuppressLint("ObsoleteSdkInt")
     private fun setSystemBarAppearance(isDark: Boolean) {

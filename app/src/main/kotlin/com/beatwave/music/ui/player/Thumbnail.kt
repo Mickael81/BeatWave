@@ -1037,31 +1037,14 @@ private fun ThumbnailImage(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        var currentUrl by remember(artworkUri) {
-            mutableStateOf(artworkUri)
-        }
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(currentUrl)
-                .size(CoilSize.ORIGINAL)
-                .crossfade(true)
-                .memoryCachePolicy(CachePolicy.ENABLED)
-                .diskCachePolicy(CachePolicy.ENABLED)
-                .networkCachePolicy(CachePolicy.ENABLED)
-                .build(),
-            // Step DOWN the ladder, one rung at a time. This used to jump straight from
-            // maxresdefault to hqdefault, and since maxresdefault (1280x720) simply does
-            // not exist for most YouTube tracks, the common case was a 404 followed by a
-            // 480x360 image blown up ~2.5x on a ~1200px player artwork -- which is the
-            // soft, mushy cover people notice. sddefault (640x480) exists far more often
-            // and is the rung that was being skipped.
-            onError = { currentUrl = nextThumbnailFallback(currentUrl) },
-            contentDescription = null,
+        MorphingCoverArt(
+            artworkUri = artworkUri,
             contentScale = if (cropArtwork) ContentScale.Crop else ContentScale.Fit,
             modifier = Modifier.fillMaxSize()
         )
     }
 }
+
 
 /**
  * Seek effect overlay showing seek direction.

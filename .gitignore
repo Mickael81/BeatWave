@@ -131,6 +131,7 @@ merge_strings.py
 
 # Perfetto/systrace captures
 *.trace
+convxdemo.mp4
 
 # Local design reference/prototype, not app source
 stitch_lucid_glass_music/

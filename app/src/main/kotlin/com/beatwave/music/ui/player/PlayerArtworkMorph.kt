@@ -1,4 +1,4 @@
-﻿/**
+/**
  * BeatWave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
@@ -25,9 +25,29 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
 import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Size as CoilSize
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import com.beatwave.music.R
 
 /**
  * Registered bounds of the mini player's own artwork and the full player's own artwork,
@@ -193,3 +213,94 @@ fun Modifier.hideWhileArtworkMorphing(progress: () -> Float): Modifier = graphic
     val fraction = progress()
     alpha = if (fraction > 0f && fraction < 1f) 0f else 1f
 }
+
+/**
+ * Renders album cover art that morphs and cross-fades smoothly into the next song's
+ * cover art during track changes (both auto-crossfade and manual skip/seek), with subtle
+ * scale zoom and depth dissolving matching the Convx / Apple Music fluid player experience.
+ */
+@Composable
+fun MorphingCoverArt(
+    artworkUri: String?,
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop,
+    contentDescription: String? = "Cover Art",
+    animationDurationMillis: Int = 800,
+) {
+    val context = LocalContext.current
+
+    AnimatedContent(
+        targetState = artworkUri,
+        transitionSpec = {
+            (fadeIn(
+                animationSpec = tween(
+                    durationMillis = animationDurationMillis,
+                    easing = FastOutSlowInEasing
+                )
+            ) + scaleIn(
+                initialScale = 0.96f,
+                animationSpec = tween(
+                    durationMillis = animationDurationMillis,
+                    easing = FastOutSlowInEasing
+                )
+            )).togetherWith(
+                fadeOut(
+                    animationSpec = tween(
+                        durationMillis = animationDurationMillis,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + scaleOut(
+                    targetScale = 1.04f,
+                    animationSpec = tween(
+                        durationMillis = animationDurationMillis,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            )
+        },
+        contentAlignment = Alignment.Center,
+        label = "MorphingCoverArt",
+        modifier = modifier
+    ) { currentUri ->
+        var activeUrl by remember(currentUri) {
+            mutableStateOf(currentUri)
+        }
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            if (!activeUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(activeUrl)
+                        .size(CoilSize.ORIGINAL)
+                        .crossfade(false)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .networkCachePolicy(CachePolicy.ENABLED)
+                        .build(),
+                    onError = { activeUrl = nextThumbnailFallback(activeUrl) },
+                    contentDescription = contentDescription,
+                    contentScale = contentScale,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.beatwave_logo),
+                        contentDescription = contentDescription,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(64.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+

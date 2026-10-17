@@ -225,9 +225,12 @@ class WelcomeActivity : ComponentActivity() {
     private fun finishOnboarding() {
         runCatching {
             startActivity(Intent(this, MainActivity::class.java))
+            @Suppress("DEPRECATION")
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
         finish()
     }
+
 }
 
 @OptIn(ExperimentalTextApi::class)

@@ -430,12 +430,8 @@ fun PlayerV2(
                                             onSwipeRight = { if (canSkipPrevious) playerConnection.player.seekToPrevious() }
                                         )
                                 ) {
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(context)
-                                            .data(mediaMetadata?.thumbnailUrl?.resize(1200, 1200))
-                                            .size(CoilSize.ORIGINAL)
-                                            .crossfade(true)
-                                            .build(),
+                                    MorphingCoverArt(
+                                        artworkUri = mediaMetadata?.thumbnailUrl?.resize(1200, 1200),
                                         contentDescription = "Cover Art",
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
@@ -582,12 +578,13 @@ fun PlayerV2(
                                             .background(adaptiveSurface, RoundedCornerShape(8.dp))
                                             .clip(RoundedCornerShape(8.dp))
                                     ) {
-                                        AsyncImage(
-                                            model = mediaMetadata?.thumbnailUrl?.resize(1200, 1200),
+                                        MorphingCoverArt(
+                                            artworkUri = mediaMetadata?.thumbnailUrl?.resize(1200, 1200),
                                             contentDescription = "Cover Art",
                                             modifier = Modifier.fillMaxSize(),
                                             contentScale = ContentScale.Crop
                                         )
+
                                         PlayerV2Canvas(
                                             mediaMetadata = mediaMetadata,
                                             isPlaying = isPlaying,
