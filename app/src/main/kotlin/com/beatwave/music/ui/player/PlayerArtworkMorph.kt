@@ -260,16 +260,17 @@ fun HolographicGlitchOverlay(
         if (peak <= 0.04f) return@Canvas
 
         // 1. Top-left angled rainbow chromatic prism light flare (matching convxdemo.mp4)
-        val flareAlpha = (peak * 0.50f).coerceIn(0f, 1f)
-        val flareBrush = Brush.radialGradient(
+        val flareAlpha = (peak * 0.55f).coerceIn(0f, 1f)
+        val flareBrush = Brush.linearGradient(
             colors = listOf(
+                Color(0x0000E5FF),
                 Color(0xFF00E5FF).copy(alpha = flareAlpha * 0.85f),
-                Color(0xFFFF007F).copy(alpha = flareAlpha * 0.70f),
-                Color(0xFFFFEA00).copy(alpha = flareAlpha * 0.50f),
-                Color.Transparent
+                Color(0xFFFF007F).copy(alpha = flareAlpha * 0.75f),
+                Color(0xFFFFEA00).copy(alpha = flareAlpha * 0.60f),
+                Color(0x00FFEA00)
             ),
-            center = Offset(w * 0.12f, h * 0.12f),
-            radius = w * 0.50f * (0.8f + 0.35f * peak)
+            start = Offset(0f, 0f),
+            end = Offset(w * 0.55f, h * 0.55f)
         )
         drawRect(
             brush = flareBrush,
@@ -278,25 +279,25 @@ fun HolographicGlitchOverlay(
         )
 
         // 2. Horizontal chromatic glitch scanline displacement bars across artwork
-        val sliceCount = 14
+        val sliceCount = 16
         for (i in 0 until sliceCount) {
             val sliceY = (i.toFloat() / sliceCount) * h
-            val sliceH = (h / sliceCount) * 0.85f
-            val wave = kotlin.math.sin((i * 1.7) + (progress * 26.0)).toFloat()
+            val sliceH = (h / sliceCount) * 0.90f
+            val wave = kotlin.math.sin((i * 1.6) + (progress * 24.0)).toFloat()
             val sliceShift = wave * with(density) { 14.dp.toPx() } * peak
 
-            if (kotlin.math.abs(wave) > 0.30f) {
+            if (kotlin.math.abs(wave) > 0.25f) {
                 // Cyan channel edge
                 drawRect(
-                    color = Color(0xFF00E5FF).copy(alpha = 0.25f * peak),
+                    color = Color(0xFF00E5FF).copy(alpha = 0.28f * peak),
                     topLeft = Offset(sliceShift, sliceY),
                     size = GeometrySize(w, sliceH),
                     blendMode = BlendMode.Screen
                 )
                 // Magenta channel edge
                 drawRect(
-                    color = Color(0xFFFF007F).copy(alpha = 0.25f * peak),
-                    topLeft = Offset(-sliceShift * 0.85f, sliceY),
+                    color = Color(0xFFFF007F).copy(alpha = 0.28f * peak),
+                    topLeft = Offset(-sliceShift * 0.90f, sliceY),
                     size = GeometrySize(w, sliceH),
                     blendMode = BlendMode.Screen
                 )
