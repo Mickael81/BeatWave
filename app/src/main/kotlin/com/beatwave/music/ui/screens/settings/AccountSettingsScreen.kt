@@ -93,6 +93,12 @@ import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import com.beatwave.music.viewmodels.HomeViewModel
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import com.beatwave.music.R
+import com.beatwave.music.ui.component.SpotifyLoginDialog
+import com.beatwave.music.utils.reportException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AccountSettingsScreen(
@@ -136,6 +142,19 @@ fun AccountSettingsScreen(
     var showToken by remember { mutableStateOf(false) }
     var showTokenEditor by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+
+    val (spotifySessionJson, onSpotifySessionChange) = rememberPreference(SpotifySessionKey, "")
+    val (spotifySync, onSpotifySyncChange) = rememberPreference(SpotifySyncKey, true)
+    var showSpotifyLoginDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val spotifySession = remember(spotifySessionJson) {
+        if (spotifySessionJson.isNotBlank()) {
+            runCatching {
+                Json { ignoreUnknownKeys = true }.decodeFromString<com.beatwave.music.viewmodels.SpotifySession>(spotifySessionJson)
+            }.getOrNull()
+        } else null
+    }
+    val isSpotifyLoggedIn = spotifySession != null
 
     Scaffold(
         topBar = {
@@ -185,19 +204,24 @@ fun AccountSettingsScreen(
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
                                 }
-                                Text(
-                                    text = if (isLoggedIn) accountName else stringResource(R.string.login),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                                )
+                                Column {
+                                    Text(
+                                        text = if (isLoggedIn) accountName else stringResource(R.string.login),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                    )
+                                    if (isLoggedIn) {
+                                        Text(
+                                            text = "Connected to YouTube Music",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
                             }
                         },
                         trailingContent = if (isLoggedIn) ({
                             OutlinedButton(
-//                                onClick = {
-//                                    accountSettingsViewModel.logoutKeepData(context, onInnerTubeCookieChange)
-//                                    navController.navigateUp()
-//                                },
                                 onClick = {
                                     showLogoutDialog = true
                                 },
@@ -214,6 +238,89 @@ fun AccountSettingsScreen(
                             else navController.navigate("login")
                         }
                     )
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Spotify Account Section
+            Material3SettingsGroup(
+                title = "Spotify Account",
+                items = listOfNotNull(
+                    Material3SettingsItem(
+                        icon = if (isSpotifyLoggedIn && !spotifySession?.accountAvatarUrl.isNullOrBlank()) null else painterResource(R.drawable.spotify),
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isSpotifyLoggedIn && !spotifySession?.accountAvatarUrl.isNullOrBlank()) {
+                                    AsyncImage(
+                                        model = spotifySession.accountAvatarUrl,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                }
+                                Column {
+                                    Text(
+                                        text = if (isSpotifyLoggedIn) (spotifySession?.accountName?.takeIf { it.isNotBlank() } ?: "Connected Spotify Account") else "Log in with Spotify",
+                                        color = MaterialTheme.colorScheme.primary,
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                    )
+                                    Text(
+                                        text = if (isSpotifyLoggedIn) "Connected • Listening syncs with Spotify Wrapped" else "Log in to sync with Spotify Wrapped & import playlists",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        },
+                        trailingContent = if (isSpotifyLoggedIn) ({
+                            OutlinedButton(
+                                onClick = {
+                                    onSpotifySessionChange("")
+                                    com.music.spotify.Spotify.accessToken = null
+                                },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                )
+                            ) {
+                                Text(stringResource(R.string.action_logout))
+                            }
+                        }) else null,
+                        onClick = {
+                            if (isSpotifyLoggedIn) {
+                                navController.navigate("settings/spotify")
+                            } else {
+                                showSpotifyLoginDialog = true
+                            }
+                        }
+                    ),
+                    if (isSpotifyLoggedIn) {
+                        Material3SettingsItem(
+                            icon = painterResource(R.drawable.sync),
+                            title = { Text("Sync to Spotify Wrapped") },
+                            description = { Text("Records plays in your Spotify history to count towards Spotify Wrapped") },
+                            trailingContent = {
+                                Switch(
+                                    checked = spotifySync,
+                                    onCheckedChange = onSpotifySyncChange,
+                                    thumbContent = {
+                                        Icon(
+                                            painter = painterResource(
+                                                id = if (spotifySync) R.drawable.check else R.drawable.close
+                                            ),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(SwitchDefaults.IconSize),
+                                        )
+                                    }
+                                )
+                            },
+                            onClick = { onSpotifySyncChange(!spotifySync) }
+                        )
+                    } else null
                 )
             )
 
@@ -535,6 +642,35 @@ fun AccountSettingsScreen(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
+        }
+
+        if (showSpotifyLoginDialog) {
+            SpotifyLoginDialog(
+                onDismiss = { showSpotifyLoginDialog = false },
+                onCookiesCaptured = { spDc, spKey ->
+                    showSpotifyLoginDialog = false
+                    coroutineScope.launch(Dispatchers.IO) {
+                        try {
+                            val token = com.music.spotify.SpotifyAuth.fetchAccessToken(spDc, spKey).getOrThrow()
+                            com.music.spotify.Spotify.accessToken = token.accessToken
+                            val profile = com.music.spotify.Spotify.me().getOrNull()
+                            val session = com.beatwave.music.viewmodels.SpotifySession(
+                                spDc = spDc,
+                                spKey = spKey,
+                                accessToken = token.accessToken,
+                                expiresAt = token.accessTokenExpirationTimestampMs,
+                                accountName = profile?.displayName,
+                                accountAvatarUrl = profile?.images?.firstOrNull()?.url
+                            )
+                            onSpotifySessionChange(
+                                Json { ignoreUnknownKeys = true }.encodeToString(session)
+                            )
+                        } catch (e: Exception) {
+                            reportException(e)
+                        }
+                    }
+                }
+            )
         }
     }
 }

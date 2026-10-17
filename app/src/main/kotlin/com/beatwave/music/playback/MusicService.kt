@@ -88,6 +88,10 @@ import com.music.innertube.models.WatchEndpoint
 import com.music.lastfm.LastFM
 import com.beatwave.music.MainActivity
 import com.beatwave.music.R
+import com.beatwave.music.constants.SpotifySessionKey
+import com.beatwave.music.constants.SpotifySyncKey
+import com.beatwave.music.constants.YtmSyncKey
+import com.music.spotify.Spotify
 import com.beatwave.music.constants.AudioNormalizationKey
 import com.beatwave.music.constants.AudioOffload
 import com.beatwave.music.constants.AudioQualityKey
@@ -3653,15 +3657,34 @@ class MusicService :
         }
 
         if (playbackStats.totalPlayTimeMs >= historyDurationMs) {
+            val title = mediaItem.mediaMetadata.title?.toString()
+            val artist = mediaItem.mediaMetadata.artist?.toString()
+            val playTime = playbackStats.totalPlayTimeMs
+
             CoroutineScope(Dispatchers.IO).launch {
-                val playbackUrl = database.format(mediaItem.mediaId).first()?.playbackUrl
-                    ?: YTPlayerUtils.playerResponseForMetadata(mediaItem.mediaId, null)
-                        .getOrNull()?.playbackTracking?.videostatsPlaybackUrl?.baseUrl
-                playbackUrl?.let {
-                    YouTube.registerPlayback(null, playbackUrl)
-                        .onFailure {
-                            reportException(it)
+                // 1. YouTube Music History & Recap Sync
+                if (dataStore.get(YtmSyncKey, true)) {
+                    val playbackUrl = database.format(mediaItem.mediaId).first()?.playbackUrl
+                        ?: YTPlayerUtils.playerResponseForMetadata(mediaItem.mediaId, null)
+                            .getOrNull()?.playbackTracking?.videostatsPlaybackUrl?.baseUrl
+                    playbackUrl?.let {
+                        YouTube.registerPlayback(null, playbackUrl)
+                            .onFailure {
+                                reportException(it)
+                            }
+                    }
+                }
+
+                // 2. Spotify Wrapped & Recently Played Sync
+                if (dataStore.get(SpotifySyncKey, true) && !title.isNullOrBlank()) {
+                    val rawSpotifySession = dataStore.get(SpotifySessionKey, "")
+                    if (rawSpotifySession.isNotBlank()) {
+                        try {
+                            Spotify.syncPlayback(title, artist.orEmpty(), playTime)
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).d("Spotify playback sync skipped: ${e.message}")
                         }
+                    }
                 }
             }
         }

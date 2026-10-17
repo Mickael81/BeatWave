@@ -320,6 +320,7 @@ val ListenTogetherSessionTimestampKey = longPreferencesKey("listenTogetherSessio
 val LastFMSessionKey = stringPreferencesKey("lastfmSession")
 val LastFMUsernameKey = stringPreferencesKey("lastfmUsername")
 val SpotifySessionKey = stringPreferencesKey("spotifySession")
+val SpotifySyncKey = booleanPreferencesKey("spotifySync")
 val EnableLastFMScrobblingKey = booleanPreferencesKey("lastfmScrobblingEnable")
 val LastFMUseNowPlaying = booleanPreferencesKey("lastfmUseNowPlaying")
 

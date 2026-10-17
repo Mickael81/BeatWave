@@ -346,28 +346,149 @@ object Spotify {
         limit: Int = 50,
         offset: Int = 0,
     ): Result<SpotifyPaging<SpotifySavedTrack>> = runCatching {
+        val token = accessToken ?: throw SpotifyException(401, "Not authenticated")
+
+        // 1. Prefer official REST API (works reliably with WebPlayer tokens)
+        try {
+            val response = gqlClient.get("https://api.spotify.com/v1/me/tracks") {
+                header("Authorization", "Bearer $token")
+                parameter("limit", limit)
+                parameter("offset", offset)
+            }
+            if (response.status == HttpStatusCode.Unauthorized) {
+                throw SpotifyException(401, "Token expired or invalid")
+            }
+            if (response.status == HttpStatusCode.OK) {
+                val responseJson = json.parseToJsonElement(response.bodyAsText()).jsonObject
+                val itemsArr = responseJson.arr("items")
+                if (itemsArr != null) {
+                    val savedTracks = itemsArr.mapNotNull { elem ->
+                        val itemObj = elem.jsonObject
+                        val trackObj = itemObj.obj("track") ?: return@mapNotNull null
+                        val trackId = trackObj.str("id") ?: return@mapNotNull null
+                        val trackName = trackObj.str("name") ?: ""
+                        val durationMs = trackObj.int("duration_ms") ?: 0
+                        val artists = trackObj.arr("artists")?.mapNotNull { aElem ->
+                            val aObj = aElem.jsonObject
+                            SpotifySimpleArtist(
+                                id = aObj.str("id") ?: "",
+                                name = aObj.str("name") ?: "",
+                                uri = aObj.str("uri") ?: ""
+                            )
+                        } ?: emptyList()
+                        val albumObj = trackObj.obj("album")
+                        val albumId = albumObj?.str("id") ?: ""
+                        val albumName = albumObj?.str("name") ?: ""
+                        val images = albumObj?.arr("images")?.mapNotNull { imgElem ->
+                            val iObj = imgElem.jsonObject
+                            SpotifyImage(
+                                url = iObj.str("url") ?: "",
+                                width = iObj.int("width"),
+                                height = iObj.int("height")
+                            )
+                        } ?: emptyList()
+
+                        SpotifySavedTrack(
+                            track = SpotifyTrack(
+                                id = trackId,
+                                name = trackName,
+                                artists = artists,
+                                album = SpotifySimpleAlbum(
+                                    id = albumId,
+                                    name = albumName,
+                                    images = images,
+                                    uri = albumObj?.str("uri")
+                                ),
+                                durationMs = durationMs,
+                                uri = trackObj.str("uri") ?: "spotify:track:$trackId"
+                            )
+                        )
+                    }
+                    val total = responseJson.int("total") ?: savedTracks.size
+                    return@runCatching SpotifyPaging(
+                        items = savedTracks,
+                        total = total,
+                        limit = limit,
+                        offset = offset,
+                    )
+                }
+            }
+        } catch (e: SpotifyException) {
+            if (e.statusCode == 401) throw e
+        } catch (_: Exception) {
+            // Fallback to GraphQL
+        }
+
+        // 2. Fallback: GraphQL fetchLibraryTracks
         val vars = buildJsonObject {
             put("offset", offset)
             put("limit", limit)
         }
 
         val response = graphqlPost(operationName = "fetchLibraryTracks", variables = vars)
-        val tracksData = response.obj("data")?.obj("me")?.obj("library")?.obj("tracks")
+        val dataObj = response.obj("data")
+        val meObj = dataObj?.obj("me")
+        val tracksData = meObj?.obj("library")?.obj("tracks")
+            ?: meObj?.obj("libraryV3")?.obj("tracks")
+            ?: meObj?.obj("libraryTracks")
+            ?: meObj?.obj("savedTracks")
+            ?: dataObj?.obj("library")?.obj("tracks")
             ?: throw SpotifyException(500, "Invalid fetchLibraryTracks response")
 
         val savedTracks = tracksData.arr("items")?.mapNotNull { elem ->
-            val trackWrapper = elem.jsonObject.obj("track") ?: return@mapNotNull null
-            val trackData = trackWrapper.obj("data") ?: return@mapNotNull null
+            val trackWrapper = elem.jsonObject.obj("track") ?: elem.jsonObject.obj("item") ?: elem.jsonObject
+            val trackData = trackWrapper.obj("data") ?: trackWrapper
             val wrapperUri = trackWrapper.str("_uri") ?: trackWrapper.str("uri")
-            SpotifySavedTrack(track = parseGqlTrack(trackData, uriOverride = wrapperUri))
+            val parsed = runCatching { parseGqlTrack(trackData, uriOverride = wrapperUri) }.getOrNull()
+            parsed?.let { SpotifySavedTrack(track = it) }
         } ?: emptyList()
 
         SpotifyPaging(
             items = savedTracks,
-            total = tracksData.int("totalCount") ?: 0,
+            total = tracksData.int("totalCount") ?: tracksData.int("total") ?: savedTracks.size,
             limit = limit,
             offset = offset,
         )
+    }
+
+    suspend fun syncPlayback(
+        title: String,
+        artist: String,
+        durationMs: Long = 0L,
+    ): Result<Boolean> = runCatching {
+        val token = accessToken ?: return@runCatching false
+        val query = if (artist.isNotBlank()) "$artist $title" else title
+        val trackId = searchTrack(query).getOrNull() ?: return@runCatching false
+
+        // 1. Queue to user's Spotify playback if active
+        try {
+            gqlClient.post("https://api.spotify.com/v1/me/player/queue") {
+                header("Authorization", "Bearer $token")
+                parameter("uri", "spotify:track:$trackId")
+            }
+        } catch (_: Exception) {}
+
+        // 2. Send WebPlayer playback ping for Spotify Wrapped / Recently Played tracking
+        try {
+            val pingBody = buildJsonObject {
+                put("playback_id", java.util.UUID.randomUUID().toString())
+                put("uri", "spotify:track:$trackId")
+                put("timestamp", System.currentTimeMillis())
+                put("duration_ms", durationMs)
+            }
+            gqlClient.post("https://spclient.wg.spotify.com/track-playback/v1/playback") {
+                header("Authorization", "Bearer $token")
+                header("client-token", token)
+                setBody(
+                    TextContent(
+                        pingBody.toString(),
+                        ContentType.Application.Json.withParameter("charset", "UTF-8"),
+                    ),
+                )
+            }
+        } catch (_: Exception) {}
+
+        true
     }
 
     @Volatile

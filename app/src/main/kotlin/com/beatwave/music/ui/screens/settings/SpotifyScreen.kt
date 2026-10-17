@@ -51,6 +51,7 @@ import com.beatwave.music.R
 import com.beatwave.music.constants.RecommendationEngine
 import com.beatwave.music.constants.RecommendationEngineKey
 import com.beatwave.music.ui.component.DefaultDialog
+import com.beatwave.music.ui.component.SpotifyLoginDialog
 import com.beatwave.music.ui.component.GlassSwitchCompat as Switch
 import com.beatwave.music.ui.component.IconButton
 import com.beatwave.music.ui.component.Material3SettingsGroup
@@ -179,15 +180,15 @@ fun SpotifyScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Material3SettingsGroup(
-            title = "Import via Playlist Link",
+            title = "Import Playlist (Spotify, Apple Music, Amazon Music)",
             items = listOf(
                 Material3SettingsItem(
                     title = {
                         OutlinedTextField(
                             value = playlistLink,
                             onValueChange = { playlistLink = it },
-                            label = { Text("Spotify Playlist Link or ID") },
-                            placeholder = { Text("https://open.spotify.com/playlist/...") },
+                            label = { Text("Playlist Link or ID") },
+                            placeholder = { Text("Spotify, Apple Music, or Amazon Music URL") },
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -205,7 +206,7 @@ fun SpotifyScreen(
                         Button(
                             onClick = {
                                 if (playlistLink.isBlank()) {
-                                    android.widget.Toast.makeText(context, "Please enter a Spotify link or ID first", android.widget.Toast.LENGTH_SHORT).show()
+                                    android.widget.Toast.makeText(context, "Please enter a Spotify, Apple Music, or Amazon Music playlist link", android.widget.Toast.LENGTH_SHORT).show()
                                     return@Button
                                 }
                                 viewModel.importPlaylistByLink(playlistLink)
@@ -467,185 +468,5 @@ fun SpotifyScreen(
             onDismiss = { showPlaylistsSheet = false },
             viewModel = viewModel
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SpotifyLoginDialog(
-    onDismiss: () -> Unit,
-    onCookiesCaptured: (spDc: String, spKey: String) -> Unit,
-) {
-    var webView by remember { mutableStateOf<WebView?>(null) }
-    var captured by remember { mutableStateOf(false) }
-    var pageProgress by remember { mutableStateOf(0) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            webView?.stopLoading()
-            webView?.loadUrl("about:blank")
-            webView?.destroy()
-            webView = null
-        }
-    }
-
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false
-        )
-    ) {
-        Scaffold(
-            topBar = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    TopAppBar(
-                        title = { Text(stringResource(R.string.spotify_login_title)) },
-                        navigationIcon = {
-                            IconButton(onClick = onDismiss) {
-                                Icon(
-                                    painterResource(R.drawable.close),
-                                    contentDescription = "Close"
-                                )
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = { webView?.reload() }) {
-                                Icon(
-                                    painterResource(R.drawable.sync),
-                                    contentDescription = "Reload"
-                                )
-                            }
-                        },
-                        windowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
-                    )
-                    if (isLoading || pageProgress in 1..99) {
-                        LinearProgressIndicator(
-                            progress = { pageProgress / 100f },
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    }
-                }
-            }
-        ) { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                AndroidView(
-                    modifier = Modifier.fillMaxSize(),
-                    factory = { context ->
-                        WebView(context).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
-
-                            val cookieManager = CookieManager.getInstance()
-                            cookieManager.setAcceptCookie(true)
-                            cookieManager.setAcceptThirdPartyCookies(this, true)
-
-                            settings.apply {
-                                javaScriptEnabled = true
-                                domStorageEnabled = true
-                                databaseEnabled = true
-                                allowFileAccess = true
-                                allowContentAccess = true
-                                loadWithOverviewMode = true
-                                useWideViewPort = true
-                                mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                                setSupportZoom(true)
-                                builtInZoomControls = true
-                                displayZoomControls = false
-
-                                val rawUa = userAgentString.orEmpty()
-                                userAgentString = if (rawUa.contains("; wv")) {
-                                    rawUa.replace("; wv", "")
-                                } else if (rawUa.isNotBlank()) {
-                                    rawUa
-                                } else {
-                                    "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
-                                }
-                            }
-
-                            webChromeClient = object : WebChromeClient() {
-                                override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                                    pageProgress = newProgress
-                                    if (newProgress >= 100) {
-                                        isLoading = false
-                                    }
-                                }
-                            }
-
-                            webViewClient = object : WebViewClient() {
-                                private fun captureCookies(url: String?): Boolean {
-                                    if (captured) return true
-                                    cookieManager.flush()
-                                    val allCookies = buildString {
-                                        append(cookieManager.getCookie("https://open.spotify.com") ?: "")
-                                        append(";")
-                                        append(cookieManager.getCookie("https://accounts.spotify.com") ?: "")
-                                        append(";")
-                                        append(cookieManager.getCookie("https://spotify.com") ?: "")
-                                        if (url != null) {
-                                            append(";")
-                                            append(cookieManager.getCookie(url) ?: "")
-                                        }
-                                    }
-                                    val cookies = allCookies.split(";").associate {
-                                        val parts = it.split("=")
-                                        val key = parts.firstOrNull()?.trim().orEmpty()
-                                        val valStr = parts.drop(1).joinToString("=").trim()
-                                        key to valStr
-                                    }
-                                    val spDc = cookies["sp_dc"].orEmpty()
-                                    if (spDc.isBlank()) return false
-                                    captured = true
-                                    val spKey = cookies["sp_key"].orEmpty()
-                                    onCookiesCaptured(spDc, spKey)
-                                    return true
-                                }
-
-                                override fun shouldOverrideUrlLoading(
-                                    view: WebView,
-                                    request: WebResourceRequest,
-                                ): Boolean = captureCookies(request.url?.toString())
-
-                                override fun onPageStarted(
-                                    view: WebView,
-                                    url: String?,
-                                    favicon: android.graphics.Bitmap?,
-                                ) {
-                                    isLoading = true
-                                    captureCookies(url)
-                                }
-
-                                override fun onPageFinished(view: WebView, url: String?) {
-                                    isLoading = false
-                                    captureCookies(url)
-                                }
-                            }
-
-                            webView = this
-                            cookieManager.removeAllCookies(null)
-                            cookieManager.flush()
-                            loadUrl(SpotifyAuth.LOGIN_URL)
-                        }
-                    },
-                    update = { view ->
-                        webView = view
-                    }
-                )
-            }
-        }
-    }
-
-    BackHandler(enabled = webView?.canGoBack() == true) {
-        webView?.goBack()
     }
 }

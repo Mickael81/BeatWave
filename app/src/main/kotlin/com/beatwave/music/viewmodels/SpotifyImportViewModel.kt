@@ -22,6 +22,7 @@ import com.music.innertube.YouTube
 import com.music.innertube.models.SongItem
 import com.beatwave.music.utils.dataStore
 import com.beatwave.music.utils.reportException
+import com.beatwave.music.utils.UniversalPlaylistImporter
 import com.beatwave.music.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -322,6 +323,7 @@ class SpotifyImportViewModel @Inject constructor(
         val tracks = mutableListOf<SpotifyTrack>()
         var offset = 0
         val limit = 50
+        ensureAuthenticated()
         while (true) {
             val page = spotifyCallWithTokenRetry {
                 Spotify.likedSongs(limit = limit, offset = offset).getOrThrow()
@@ -348,7 +350,19 @@ class SpotifyImportViewModel @Inject constructor(
     fun startImport(selectedIds: List<String>) {
         importJob?.cancel()
         importJob = viewModelScope.launch(Dispatchers.IO) {
-            _importProgress.update { null }
+            val isLiked = selectedIds.contains("liked_songs")
+            val initialTitle = if (isLiked) {
+                context.getString(R.string.spotify_liked_songs)
+            } else {
+                context.getString(R.string.spotify_import_in_progress)
+            }
+            _importProgress.value = SpotifyImportProgress(
+                playlistName = initialTitle,
+                currentSongIndex = 0,
+                totalSongs = 0,
+                percent = 0.0f,
+                isFinished = false
+            )
 
             try {
                 selectedIds.forEachIndexed { playlistIndex, id ->
@@ -536,10 +550,23 @@ class SpotifyImportViewModel @Inject constructor(
             } catch (e: Exception) {
                 if (e !is kotlinx.coroutines.CancellationException) {
                     reportException(e)
-                    _uiState.update { it.copy(errorMessage = e.message ?: "Failed to import playlists") }
+                    val errorMsg = e.localizedMessage ?: "Failed to import playlists"
+                    _uiState.update { it.copy(errorMessage = errorMsg) }
+                    _importProgress.update { old ->
+                        old?.copy(
+                            isFinished = true,
+                            playlistName = "Import Failed: $errorMsg"
+                        ) ?: SpotifyImportProgress(
+                            playlistName = "Import Failed: $errorMsg",
+                            currentSongIndex = 0,
+                            totalSongs = 0,
+                            percent = 1.0f,
+                            isFinished = true
+                        )
+                    }
                 }
             } finally {
-                if (_importProgress.value?.isFinished != true) {
+                if (_importProgress.value?.isFinished != true && _importProgress.value?.totalSongs == 0) {
                     _importProgress.update { null }
                 }
             }
@@ -561,80 +588,40 @@ class SpotifyImportViewModel @Inject constructor(
     }
 
     fun importPlaylistByLink(link: String) {
-        val playlistId = extractPlaylistId(link)
-        if (playlistId == null) {
-            _uiState.update { it.copy(errorMessage = "Invalid Spotify playlist link") }
+        val cleanLink = link.trim()
+        if (cleanLink.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Please enter a playlist link") }
             return
         }
 
         importJob?.cancel()
         importJob = viewModelScope.launch(Dispatchers.IO) {
-            _importProgress.update { null }
-            _uiState.update { it.copy(isLoading = true) }
+            _importProgress.value = SpotifyImportProgress(
+                playlistName = "Analyzing playlist link...",
+                currentSongIndex = 0,
+                totalSongs = 0,
+                percent = 0.0f,
+                isFinished = false
+            )
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             try {
-                // 1. Fetch embed page HTML
-                val client = okhttp3.OkHttpClient()
-                val request = okhttp3.Request.Builder()
-                    .url("https://open.spotify.com/embed/playlist/$playlistId")
-                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                    .build()
-
-                val html = client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) throw Exception("Failed to fetch playlist page (HTTP ${response.code})")
-                    response.body?.string() ?: ""
+                val parsed = UniversalPlaylistImporter.parse(cleanLink)
+                val totalSongs = parsed.songs.size
+                if (totalSongs == 0) {
+                    throw Exception("No songs found in playlist. Please make sure the link is public.")
                 }
 
-                // 2. Parse __NEXT_DATA__
-                val regex = Regex("""<script id="__NEXT_DATA__"[^>]*>(.*?)</script>""")
-                val matchResult = regex.find(html) ?: throw Exception("Could not parse Spotify page data")
-                val jsonStr = matchResult.groupValues[1]
-
-                val jsonElement = json.parseToJsonElement(jsonStr)
-                val props = jsonElement.jsonObject["props"]?.jsonObject
-                val pageProps = props?.get("pageProps")?.jsonObject
-                val state = pageProps?.get("state")?.jsonObject
-                val data = state?.get("data")?.jsonObject
-                val entity = data?.get("entity")?.jsonObject
-
-                val playlistName = entity?.get("name")?.jsonPrimitive?.contentOrNull ?: "Imported Playlist"
-                val coverUrl = entity?.get("coverArt")?.jsonObject
-                    ?.get("sources")?.jsonArray?.firstOrNull()?.jsonObject
-                    ?.get("url")?.jsonPrimitive?.contentOrNull
-
-                val trackList = entity?.get("trackList")?.jsonArray ?: emptyList()
-                val songs = trackList.mapNotNull { trackElement ->
-                    val trackObj = trackElement.jsonObject
-                    val title = trackObj["title"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                    val artist = trackObj["subtitle"]?.jsonPrimitive?.contentOrNull ?: "Unknown Artist"
-                    val durationMs = trackObj["duration"]?.jsonPrimitive?.longOrNull ?: 0L
-                    
-                    Song(
-                        song = SongEntity(
-                            id = "",
-                            title = title,
-                            duration = (durationMs / 1000).toInt(),
-                            thumbnailUrl = coverUrl,
-                        ),
-                        artists = listOf(ArtistEntity(id = "", name = artist)),
-                    )
-                }
-
-                if (songs.isEmpty()) {
-                    throw Exception("No tracks found in the playlist. Make sure it's public.")
-                }
-
+                val safeId = Math.abs(cleanLink.hashCode()).toString()
                 val importData = PlaylistImportData(
-                    title = playlistName,
-                    songs = songs,
-                    localPlaylistId = "SPOTIFY_PLAYLIST_LINK_$playlistId",
-                    thumbnailUrl = coverUrl
+                    title = parsed.title,
+                    songs = parsed.songs,
+                    localPlaylistId = "PLAYLIST_${parsed.source.uppercase()}_$safeId",
+                    thumbnailUrl = parsed.coverUrl
                 )
 
                 _uiState.update { it.copy(isLoading = false) }
 
-                // 3. Process matching and import
-                val totalSongs = importData.songs.size
                 _importProgress.update {
                     SpotifyImportProgress(
                         playlistName = importData.title,
@@ -742,9 +729,9 @@ class SpotifyImportViewModel @Inject constructor(
 
                 _importProgress.update { old ->
                     old?.copy(isFinished = true) ?: SpotifyImportProgress(
-                        playlistName = "",
-                        currentSongIndex = 0,
-                        totalSongs = 0,
+                        playlistName = importData.title,
+                        currentSongIndex = totalSongs,
+                        totalSongs = totalSongs,
                         percent = 1.0f,
                         isFinished = true
                     )
@@ -753,18 +740,25 @@ class SpotifyImportViewModel @Inject constructor(
             } catch (e: Exception) {
                 if (e !is kotlinx.coroutines.CancellationException) {
                     reportException(e)
+                    val errorMsg = e.localizedMessage ?: "Failed to import playlist"
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = e.message ?: "Failed to import playlist"
+                            errorMessage = errorMsg
+                        )
+                    }
+                    _importProgress.update {
+                        SpotifyImportProgress(
+                            playlistName = "Import Failed: $errorMsg",
+                            currentSongIndex = 0,
+                            totalSongs = 0,
+                            percent = 1.0f,
+                            isFinished = true
                         )
                     }
                 }
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
-                if (_importProgress.value?.isFinished != true) {
-                    _importProgress.update { null }
-                }
             }
         }
     }
