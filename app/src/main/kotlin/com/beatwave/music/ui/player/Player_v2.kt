@@ -49,6 +49,7 @@ import coil3.compose.AsyncImage
 import coil3.SingletonImageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import coil3.request.crossfade
 import coil3.size.Size as CoilSize
 import androidx.media3.common.C
 
@@ -83,9 +84,6 @@ import com.beatwave.music.ui.utils.resize
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
-import coil3.request.ImageRequest
-import coil3.request.crossfade
-import coil3.size.Size as CoilSize
 import com.beatwave.music.extensions.SwipeGesture
 import com.beatwave.music.vivimusic.AudioDeviceBottomSheet
 import com.beatwave.music.vivimusic.getConnectedBluetoothDeviceName

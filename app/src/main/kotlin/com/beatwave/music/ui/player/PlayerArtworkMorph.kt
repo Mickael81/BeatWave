@@ -284,7 +284,7 @@ fun MorphingCoverArt(
         val outUrl = outgoingUrl
         val p = progress.value
         if (!outUrl.isNullOrBlank() && p < 1f) {
-            var activeOutUrl by remember(outUrl) { mutableStateOf(outUrl) }
+            var activeOutUrl by remember(outUrl) { mutableStateOf<String?>(outUrl) }
             val outAlpha = (1f - p).coerceIn(0f, 1f)
             val outScale = 1f + (0.03f * p)
 
@@ -313,7 +313,7 @@ fun MorphingCoverArt(
         // Incoming artwork layer
         val curUrl = currentUrl
         if (!curUrl.isNullOrBlank()) {
-            var activeCurUrl by remember(curUrl) { mutableStateOf(curUrl) }
+            var activeCurUrl by remember(curUrl) { mutableStateOf<String?>(curUrl) }
             val inAlpha = if (outgoingUrl != null) p.coerceIn(0f, 1f) else 1f
             val inScale = if (outgoingUrl != null) (0.96f + (0.04f * p)) else 1f
 
