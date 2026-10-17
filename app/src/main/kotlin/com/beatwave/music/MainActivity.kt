@@ -189,6 +189,9 @@ import com.beatwave.music.constants.AppBackgroundColorKey
 import com.beatwave.music.constants.AppBarHeight
 import com.beatwave.music.constants.AppLanguageKey
 import com.beatwave.music.constants.AppleMusicUiKey
+import com.beatwave.music.constants.UseAppleMusicPlayerKey
+import com.beatwave.music.constants.ShowPlayerThumbnailShadowKey
+import com.beatwave.music.constants.PlayerThumbnailShadowElevationKey
 import com.beatwave.music.constants.CanvasSource
 import com.beatwave.music.constants.CanvasSourceKey
 import com.beatwave.music.constants.DarkModeKey
@@ -606,6 +609,18 @@ class MainActivity : ComponentActivity() {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     }
                 }
+        }
+
+        val modernPlayerMigratedKey = androidx.datastore.preferences.core.booleanPreferencesKey("modern_player_v2_migrated_v4")
+        if (dataStore.get(modernPlayerMigratedKey, false) != true) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                dataStore.edit { prefs ->
+                    prefs[UseAppleMusicPlayerKey] = true
+                    prefs[ShowPlayerThumbnailShadowKey] = true
+                    prefs[PlayerThumbnailShadowElevationKey] = 20f
+                    prefs[modernPlayerMigratedKey] = true
+                }
+            }
         }
 
         setContent {

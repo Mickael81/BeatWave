@@ -60,7 +60,9 @@ import com.beatwave.music.constants.PlayerThumbnailShadowElevationKey
 import com.beatwave.music.constants.EnableGoogleCastKey
 import com.beatwave.music.models.MediaMetadata
 import com.beatwave.music.ui.component.BottomSheetState
+import com.beatwave.music.ui.component.DjReadout
 import com.beatwave.music.ui.component.PlayerSliderTrack
+import androidx.compose.ui.text.style.TextAlign
 import com.beatwave.music.ui.theme.PlayerSliderColors
 import com.beatwave.music.utils.makeTimeString
 import com.beatwave.music.utils.rememberEnumPreference
@@ -224,8 +226,8 @@ fun PlayerV2(
         storedPlayerBackground
     }
     
-    val showPlayerThumbnailShadow by rememberPreference(ShowPlayerThumbnailShadowKey, defaultValue = false)
-    val playerThumbnailShadowElevation by rememberPreference(PlayerThumbnailShadowElevationKey, defaultValue = 8f)
+    val showPlayerThumbnailShadow by rememberPreference(ShowPlayerThumbnailShadowKey, defaultValue = true)
+    val playerThumbnailShadowElevation by rememberPreference(PlayerThumbnailShadowElevationKey, defaultValue = 20f)
     val enableGoogleCast by rememberPreference(EnableGoogleCastKey, defaultValue = true)
     val (appTextColorInt) = rememberPreference(AppTextColorKey, defaultValue = 0)
     val (showUpNext) = rememberPreference(ShowUpNextKey, defaultValue = false)
@@ -441,7 +443,7 @@ fun PlayerV2(
                                         // on this player -- the classic player registers
                                         // its own artwork the same way.
                                         .registerFullArtworkRect(
-                                            with(androidx.compose.ui.platform.LocalDensity.current) { 12.dp.toPx() }
+                                            with(androidx.compose.ui.platform.LocalDensity.current) { 16.dp.toPx() }
                                         )
                                         // The overlay owns the cover for the whole
                                         // flight; without this both are on screen from
@@ -449,11 +451,11 @@ fun PlayerV2(
                                         .hideWhileMorphing()
                                         .customSoftShadow(
                                             elevation = playerThumbnailShadowElevation.dp, 
-                                            cornerRadius = 12.dp, 
+                                            cornerRadius = 16.dp, 
                                             enabled = showPlayerThumbnailShadow
                                         )
-                                        .background(adaptiveSurface, RoundedCornerShape(12.dp))
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(adaptiveSurface, RoundedCornerShape(16.dp))
+                                        .clip(RoundedCornerShape(16.dp))
                                         .SwipeGesture(
                                             enabled = (playerState == PlayerInternalState.COVER && !isListenTogetherGuest),
                                             onSwipeLeft = { if (canSkipNext) playerConnection.player.seekToNext() },
@@ -517,6 +519,7 @@ fun PlayerV2(
                                                 mediaMetadata?.artists?.firstOrNull()?.id?.let { navController.navigate("artist/$it") }
                                             }
                                         )
+                                        DjReadout(modifier = Modifier.padding(top = 2.dp))
                                     }
 
                                     Row(
@@ -531,7 +534,7 @@ fun PlayerV2(
                                         Box(
                                             modifier = Modifier
                                                 .size(40.dp)
-                                                .background(adaptivePrimary.copy(alpha = 0.1f), CircleShape),
+                                                .background(adaptivePrimary.copy(alpha = 0.12f), CircleShape),
                                             contentAlignment = Alignment.Center
                                         ) {
                                         IconButton(
@@ -539,9 +542,10 @@ fun PlayerV2(
                                         ) {
                                             PlayerGlyph(
                                                 slot = if (isLiked) PlayerIconSlot.V2_LIKED else PlayerIconSlot.V2_LIKE,
-                                                fallback = if (isLiked) R.drawable.favorite else R.drawable.favorite_border,
+                                                fallback = if (isLiked) R.drawable.star else R.drawable.bookmark_star_library,
                                                 tint = adaptivePrimary,
-                                                contentDescription = "Like",
+                                                contentDescription = "Favorite",
+                                                modifier = Modifier.size(24.dp)
                                             )
                                         }
                                         }
@@ -844,102 +848,70 @@ fun PlayerV2(
                 
                     Spacer(modifier = Modifier.height(16.dp))
                 
-                    // Material 3 Expressive Playback Controls Deck
+                    // Floating Apple Music Playback Controls Deck (matching convxdemo.mp4)
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = adaptivePrimary.copy(alpha = 0.08f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, adaptivePrimary.copy(alpha = 0.16f)),
+                        IconButton(
+                            onClick = { playerConnection.player.seekToPrevious() },
+                            enabled = !isListenTogetherGuest && canSkipPrevious,
                             modifier = Modifier
-                                .size(54.dp)
-                                .alpha(if (isListenTogetherGuest || !canSkipPrevious) 0.4f else 1f)
+                                .size(56.dp)
+                                .alpha(if (isListenTogetherGuest || !canSkipPrevious) 0.35f else 1f)
                         ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable(
-                                        enabled = !isListenTogetherGuest && canSkipPrevious,
-                                        onClick = { playerConnection.player.seekToPrevious() }
-                                    )
-                            ) {
-                                PlayerGlyph(
-                                    slot = PlayerIconSlot.V2_PREVIOUS,
-                                    fallback = R.drawable.apple_skip_previous,
-                                    tint = adaptivePrimary,
-                                    modifier = Modifier.size(28.dp),
-                                    contentDescription = "Previous",
-                                )
-                            }
+                            PlayerGlyph(
+                                slot = PlayerIconSlot.V2_PREVIOUS,
+                                fallback = R.drawable.apple_skip_previous,
+                                tint = adaptivePrimary,
+                                modifier = Modifier.size(38.dp),
+                                contentDescription = "Previous",
+                            )
                         }
 
-                        Surface(
-                            shape = CircleShape,
-                            color = adaptivePrimary.copy(alpha = 0.16f),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, adaptivePrimary.copy(alpha = 0.32f)),
-                            shadowElevation = 8.dp,
+                        IconButton(
+                            onClick = {
+                                if (isListenTogetherGuest) {
+                                    playerConnection.toggleMute()
+                                } else {
+                                    playerConnection.player.togglePlayPause()
+                                }
+                            },
                             modifier = Modifier.size(76.dp)
                         ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable {
-                                        if (isListenTogetherGuest) {
-                                            playerConnection.toggleMute()
-                                        } else {
-                                            playerConnection.player.togglePlayPause()
-                                        }
-                                    }
-                            ) {
-                                if (isListenTogetherGuest) {
-                                    Icon(
-                                        imageVector = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
-                                        contentDescription = if (isMuted) "Unmute" else "Mute",
-                                        modifier = Modifier.size(36.dp),
-                                        tint = adaptivePrimary
-                                    )
-                                } else {
-                                    PlayerGlyph(
-                                        slot = if (isPlaying) PlayerIconSlot.V2_PAUSE else PlayerIconSlot.V2_PLAY,
-                                        fallback = if (isPlaying) R.drawable.pause_applemusic else R.drawable.play_applemusic,
-                                        tint = adaptivePrimary,
-                                        modifier = Modifier.size(40.dp),
-                                        contentDescription = if (isPlaying) "Pause" else "Play",
-                                    )
-                                }
+                            if (isListenTogetherGuest) {
+                                Icon(
+                                    imageVector = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                                    contentDescription = if (isMuted) "Unmute" else "Mute",
+                                    modifier = Modifier.size(44.dp),
+                                    tint = adaptivePrimary
+                                )
+                            } else {
+                                PlayerGlyph(
+                                    slot = if (isPlaying) PlayerIconSlot.V2_PAUSE else PlayerIconSlot.V2_PLAY,
+                                    fallback = if (isPlaying) R.drawable.pause_applemusic else R.drawable.play_applemusic,
+                                    tint = adaptivePrimary,
+                                    modifier = Modifier.size(54.dp),
+                                    contentDescription = if (isPlaying) "Pause" else "Play",
+                                )
                             }
                         }
 
-                        Surface(
-                            shape = CircleShape,
-                            color = adaptivePrimary.copy(alpha = 0.08f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, adaptivePrimary.copy(alpha = 0.16f)),
+                        IconButton(
+                            onClick = { playerConnection.player.seekToNext() },
+                            enabled = !isListenTogetherGuest && canSkipNext,
                             modifier = Modifier
-                                .size(54.dp)
-                                .alpha(if (isListenTogetherGuest || !canSkipNext) 0.4f else 1f)
+                                .size(56.dp)
+                                .alpha(if (isListenTogetherGuest || !canSkipNext) 0.35f else 1f)
                         ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable(
-                                        enabled = !isListenTogetherGuest && canSkipNext,
-                                        onClick = { playerConnection.player.seekToNext() }
-                                    )
-                            ) {
-                                PlayerGlyph(
-                                    slot = PlayerIconSlot.V2_NEXT,
-                                    fallback = R.drawable.apple_skip_next,
-                                    tint = adaptivePrimary,
-                                    modifier = Modifier.size(28.dp),
-                                    contentDescription = "Next",
-                                )
-                            }
+                            PlayerGlyph(
+                                slot = PlayerIconSlot.V2_NEXT,
+                                fallback = R.drawable.apple_skip_next,
+                                tint = adaptivePrimary,
+                                modifier = Modifier.size(38.dp),
+                                contentDescription = "Next",
+                            )
                         }
                     }
                     
@@ -1001,96 +973,76 @@ fun PlayerV2(
                        slideOutVertically(animationSpec = tween(500, easing = LinearOutSlowInEasing)) { it / 2 } +
                        androidx.compose.animation.shrinkVertically(animationSpec = tween(500, easing = LinearOutSlowInEasing))
             ) {
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = adaptivePrimary.copy(alpha = 0.08f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, adaptivePrimary.copy(alpha = 0.16f)),
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .padding(horizontal = 32.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
+                    val isLyricsActive = playerState == PlayerInternalState.LYRICS
+                    IconButton(
+                        onClick = { playerState = if (isLyricsActive) PlayerInternalState.COVER else PlayerInternalState.LYRICS },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        PlayerGlyph(
+                            slot = PlayerIconSlot.V2_LYRICS,
+                            fallback = R.drawable.apple_lyrics,
+                            tint = if (isLyricsActive) adaptivePrimary else adaptiveSecondary,
+                            modifier = Modifier.size(26.dp),
+                            contentDescription = "Lyrics",
+                        )
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .fillMaxWidth()
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                                onClick = {}
+                                onClick = { showAudioDeviceBottomSheet = true }
                             )
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        val isLyricsActive = playerState == PlayerInternalState.LYRICS
-                        IconButton(
-                            onClick = { playerState = if (isLyricsActive) PlayerInternalState.COVER else PlayerInternalState.LYRICS }
-                        ) {
-                            PlayerGlyph(
-                                slot = PlayerIconSlot.V2_LYRICS,
-                                fallback = R.drawable.apple_lyrics,
-                                tint = if (isLyricsActive) adaptivePrimary else adaptiveSecondary,
+                        if (BuildConfig.CAST_AVAILABLE && enableGoogleCast && bluetoothDeviceName == null) {
+                            CastButton(
                                 modifier = Modifier.size(28.dp),
-                                contentDescription = "Lyrics",
+                                tintColor = adaptiveSecondary,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (bluetoothDeviceName != null) Icons.Default.Headphones else Icons.Default.VolumeUp,
+                                contentDescription = "Audio Device",
+                                tint = adaptiveSecondary,
+                                modifier = Modifier.size(26.dp)
                             )
                         }
+                        if (bluetoothDeviceName != null) {
+                            Spacer(Modifier.height(3.dp))
+                            Text(
+                                text = bluetoothDeviceName!!,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                color = adaptiveSecondary.copy(alpha = 0.85f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.widthIn(max = 140.dp)
+                            )
+                        }
+                    }
 
-                        Box(contentAlignment = Alignment.Center) {
-                            if (bluetoothDeviceName != null) {
-                                IconButton(
-                                    onClick = { showAudioDeviceBottomSheet = true },
-                                    modifier = Modifier.background(Color.Transparent, RoundedCornerShape(12.dp))
-                                ) {
-                                    Icon(
-                                        Icons.Default.Bluetooth, 
-                                        contentDescription = "Audio Device", 
-                                        tint = adaptiveSecondary, 
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
-                                Text(
-                                    text = bluetoothDeviceName!!,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    color = adaptiveSecondary.copy(alpha = 0.8f),
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    modifier = Modifier
-                                        .absoluteOffset(y = 30.dp)
-                                        .widthIn(max = 84.dp)
-                                )
-                            } else if (BuildConfig.CAST_AVAILABLE && enableGoogleCast) {
-                                CastButton(
-                                    modifier = Modifier.size(48.dp),
-                                    tintColor = adaptiveSecondary,
-                                )
-                            } else {
-                                IconButton(
-                                    onClick = { showAudioDeviceBottomSheet = true },
-                                    modifier = Modifier.background(Color.Transparent, RoundedCornerShape(12.dp))
-                                ) {
-                                    PlayerGlyph(
-                                        slot = PlayerIconSlot.V2_VOLUME_DOWN,
-                                        fallback = R.drawable.speaker_apple,
-                                        tint = adaptiveSecondary,
-                                        modifier = Modifier.size(28.dp),
-                                        contentDescription = "Speaker",
-                                    )
-                                }
-                            }
-                        }
-                        
-                        val isQueueActive = playerState == PlayerInternalState.QUEUE
-                        IconButton(
-                            onClick = { playerState = if (isQueueActive) PlayerInternalState.COVER else PlayerInternalState.QUEUE }
-                        ) {
-                            PlayerGlyph(
-                                slot = PlayerIconSlot.V2_QUEUE,
-                                fallback = R.drawable.apple_queue,
-                                tint = if (isQueueActive) adaptivePrimary else adaptiveSecondary,
-                                modifier = Modifier.size(28.dp),
-                                contentDescription = "Queue",
-                            )
-                        }
+                    val isQueueActive = playerState == PlayerInternalState.QUEUE
+                    IconButton(
+                        onClick = { playerState = if (isQueueActive) PlayerInternalState.COVER else PlayerInternalState.QUEUE },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        PlayerGlyph(
+                            slot = PlayerIconSlot.V2_QUEUE,
+                            fallback = R.drawable.apple_queue,
+                            tint = if (isQueueActive) adaptivePrimary else adaptiveSecondary,
+                            modifier = Modifier.size(26.dp),
+                            contentDescription = "Queue",
+                        )
                     }
                 }
             }

@@ -48,9 +48,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.LaunchedEffect
 
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.beatwave.music.R
+import kotlinx.coroutines.delay
 
 /**
  * Registered bounds of the mini player's own artwork and the full player's own artwork,
@@ -220,7 +224,7 @@ fun Modifier.hideWhileArtworkMorphing(progress: () -> Float): Modifier = graphic
 /**
  * Renders album cover art that morphs and cross-fades smoothly into the next song's
  * cover art during track changes (both auto-crossfade and manual skip/seek), matching
- * convxdemo.mp4 exactly with a dual-layer pixel-perfect dissolve.
+ * convxdemo.mp4 exactly with a dual-layer pixel-perfect dissolve and chromatic aberration.
  */
 @Composable
 fun MorphingCoverArt(
@@ -228,19 +232,38 @@ fun MorphingCoverArt(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
     contentDescription: String? = "Cover Art",
-    animationDurationMillis: Int = 650,
+    animationDurationMillis: Int = 800,
 ) {
     val context = LocalContext.current
 
     var currentUrl by remember { mutableStateOf(artworkUri) }
     var outgoingUrl by remember { mutableStateOf<String?>(null) }
+    var incomingLoaded by remember { mutableStateOf(false) }
     val progress = remember { Animatable(1f) }
 
+    // When artworkUri changes, stage outgoing artwork and prepare incoming
     LaunchedEffect(artworkUri) {
         if (artworkUri != currentUrl) {
-            outgoingUrl = currentUrl
+            if (currentUrl != null) {
+                outgoingUrl = currentUrl
+                incomingLoaded = false
+                progress.snapTo(0f)
+            }
             currentUrl = artworkUri
-            progress.snapTo(0f)
+        }
+    }
+
+    // Safety timeout: if incoming image takes longer than 600ms, start morphing anyway
+    LaunchedEffect(currentUrl, outgoingUrl) {
+        if (outgoingUrl != null && !incomingLoaded) {
+            delay(600L)
+            incomingLoaded = true
+        }
+    }
+
+    // Run the fluid morph animation as soon as the incoming image is decoded/ready
+    LaunchedEffect(incomingLoaded, currentUrl, outgoingUrl) {
+        if (incomingLoaded && outgoingUrl != null && progress.value < 1f) {
             progress.animateTo(
                 targetValue = 1f,
                 animationSpec = tween(
@@ -256,10 +279,15 @@ fun MorphingCoverArt(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // Outgoing artwork layer (fades out from 1f -> 0f while remaining completely stationary)
+        // Outgoing artwork layer: stays 100% visible while incoming is loading (progress == 0),
+        // then dissolves 1.0f -> 0.0f smoothly with subtle expansive scale for depth
         val outUrl = outgoingUrl
-        if (!outUrl.isNullOrBlank() && progress.value < 1f) {
+        val p = progress.value
+        if (!outUrl.isNullOrBlank() && p < 1f) {
             var activeOutUrl by remember(outUrl) { mutableStateOf(outUrl) }
+            val outAlpha = (1f - p).coerceIn(0f, 1f)
+            val outScale = 1f + (0.03f * p)
+
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(activeOutUrl)
@@ -274,14 +302,75 @@ fun MorphingCoverArt(
                 contentScale = contentScale,
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer { alpha = (1f - progress.value).coerceIn(0f, 1f) }
+                    .graphicsLayer {
+                        alpha = outAlpha
+                        scaleX = outScale
+                        scaleY = outScale
+                    }
             )
         }
 
-        // Incoming / current artwork layer (fades in from 0f -> 1f while remaining completely stationary)
+        // Incoming artwork layer
         val curUrl = currentUrl
         if (!curUrl.isNullOrBlank()) {
             var activeCurUrl by remember(curUrl) { mutableStateOf(curUrl) }
+            val inAlpha = if (outgoingUrl != null) p.coerceIn(0f, 1f) else 1f
+            val inScale = if (outgoingUrl != null) (0.96f + (0.04f * p)) else 1f
+
+            // Chromatic aberration morph effect during track transition (matching convxdemo.mp4)
+            val isMorphing = outgoingUrl != null && p in 0.02f..0.98f
+            val morphPeak = if (isMorphing) kotlin.math.sin(p * Math.PI.toFloat()) else 0f
+            val chromaticOffsetPx = morphPeak * with(LocalDensity.current) { 6.dp.toPx() }
+
+            if (morphPeak > 0.08f) {
+                // Cyan channel shift (left)
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(activeCurUrl)
+                        .size(CoilSize.ORIGINAL)
+                        .crossfade(false)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .networkCachePolicy(CachePolicy.ENABLED)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = contentScale,
+                    colorFilter = ColorFilter.tint(Color(0xFF00E5FF).copy(alpha = 0.35f * morphPeak), BlendMode.SrcAtop),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            alpha = (inAlpha * 0.7f).coerceIn(0f, 1f)
+                            translationX = -chromaticOffsetPx
+                            scaleX = inScale
+                            scaleY = inScale
+                        }
+                )
+
+                // Magenta/Red channel shift (right)
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(activeCurUrl)
+                        .size(CoilSize.ORIGINAL)
+                        .crossfade(false)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .networkCachePolicy(CachePolicy.ENABLED)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = contentScale,
+                    colorFilter = ColorFilter.tint(Color(0xFFFF1744).copy(alpha = 0.35f * morphPeak), BlendMode.SrcAtop),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            alpha = (inAlpha * 0.7f).coerceIn(0f, 1f)
+                            translationX = chromaticOffsetPx
+                            scaleX = inScale
+                            scaleY = inScale
+                        }
+                )
+            }
+
+            // Primary artwork image
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(activeCurUrl)
@@ -291,12 +380,20 @@ fun MorphingCoverArt(
                     .diskCachePolicy(CachePolicy.ENABLED)
                     .networkCachePolicy(CachePolicy.ENABLED)
                     .build(),
-                onError = { activeCurUrl = nextThumbnailFallback(activeCurUrl) },
+                onSuccess = { incomingLoaded = true },
+                onError = {
+                    activeCurUrl = nextThumbnailFallback(activeCurUrl)
+                    incomingLoaded = true
+                },
                 contentDescription = contentDescription,
                 contentScale = contentScale,
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer { alpha = progress.value.coerceIn(0f, 1f) }
+                    .graphicsLayer {
+                        alpha = inAlpha
+                        scaleX = inScale
+                        scaleY = inScale
+                    }
             )
         } else if (outgoingUrl.isNullOrBlank()) {
             Box(
