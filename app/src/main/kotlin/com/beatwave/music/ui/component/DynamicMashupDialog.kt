@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -120,6 +121,7 @@ fun DynamicMashupDialog(
     val selectedTracks = remember { mutableStateListOf(initialSong) }
     var selectedStyle by remember { mutableStateOf(MashupTransitionStyle.LINE_BY_LINE) }
     var activeSourceTab by remember { mutableStateOf(if (queueSongs.isNotEmpty()) "QUEUE" else "ALL") }
+    var deckViewMode by remember { mutableStateOf("GRID") }
     LaunchedEffect(queueSongs) {
         if (queueSongs.isNotEmpty() && activeSourceTab == "ALL") {
             activeSourceTab = "QUEUE"
@@ -163,8 +165,8 @@ fun DynamicMashupDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier
-            .fillMaxWidth(0.95f)
-            .fillMaxHeight(0.88f),
+            .fillMaxWidth(0.98f)
+            .fillMaxHeight(0.95f),
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -226,15 +228,31 @@ fun DynamicMashupDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Selected Tracks (Anchor + up to 3 more)",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "🎛️ DJ DECKS",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.padding(2.dp)
+                        ) {
+                            Text(
+                                text = "${selectedTracks.size}/4 Active",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (queueSongs.isNotEmpty() && selectedTracks.size < 4) {
-                            TextButton(
+                            FilledTonalButton(
                                 onClick = {
                                     val availableFromQueue = queueSongs.filter { qSong -> selectedTracks.none { it.id == qSong.id } }
                                     val slotsNeeded = 4 - selectedTracks.size
@@ -246,190 +264,142 @@ fun DynamicMashupDialog(
                                         Toast.makeText(context, "All queue songs already added", Toast.LENGTH_SHORT).show()
                                     }
                                 },
-                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(30.dp)
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.queue_music),
                                     contentDescription = null,
-                                    modifier = Modifier.size(14.dp),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    modifier = Modifier.size(13.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Fill from Queue",
+                                    text = "⚡ Fill Queue",
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
                         if (selectedTracks.size > 1) {
+                            Spacer(modifier = Modifier.width(4.dp))
                             TextButton(
                                 onClick = {
                                     val anchor = selectedTracks.first()
                                     selectedTracks.clear()
                                     selectedTracks.add(anchor)
-                                    Toast.makeText(context, "Reset to Anchor track only", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Reset to Deck 1 only", Toast.LENGTH_SHORT).show()
                                 },
-                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier.height(30.dp)
                             ) {
                                 Text(
-                                    text = "Clear Slots",
+                                    text = "Clear",
                                     style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.error
                                 )
                             }
                         }
+                        IconButton(
+                            onClick = { deckViewMode = if (deckViewMode == "GRID") "CAROUSEL" else "GRID" },
+                            modifier = Modifier.size(30.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(if (deckViewMode == "GRID") R.drawable.list else R.drawable.grid_view),
+                                contentDescription = "Switch Deck Layout",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    for (slotIndex in 0 until 4) {
-                        val track = selectedTracks.getOrNull(slotIndex)
-                        if (track != null) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (slotIndex == 0) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                border = if (slotIndex == 0) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
-                                else null,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = if (slotIndex == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text(
-                                                text = "${slotIndex + 1}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (slotIndex == 0) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    AsyncImage(
-                                        model = track.thumbnailUrl,
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .size(36.dp)
-                                            .clip(RoundedCornerShape(6.dp))
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = track.title,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.SemiBold,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                modifier = Modifier.weight(1f, fill = false)
-                                            )
-                                            if (slotIndex == 0) {
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Surface(
-                                                    shape = RoundedCornerShape(4.dp),
-                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                                ) {
-                                                    Text(
-                                                        text = "ANCHOR BPM",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        fontSize = 9.sp,
-                                                        color = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        Text(
-                                            text = track.artists.joinToString(", ") { it.name },
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-                                    if (slotIndex > 0) {
-                                        IconButton(
-                                            onClick = {
-                                                // Swap track with slot 0 so it becomes Anchor!
+                if (deckViewMode == "GRID") {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            for (slotIndex in 0..1) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    val track = selectedTracks.getOrNull(slotIndex)
+                                    DjDeckGridCard(
+                                        slotIndex = slotIndex,
+                                        track = track,
+                                        onRemove = { selectedTracks.remove(track) },
+                                        onMakeMaster = {
+                                            if (track != null) {
                                                 val currentAnchor = selectedTracks[0]
                                                 selectedTracks[0] = track
                                                 selectedTracks[slotIndex] = currentAnchor
-                                                Toast.makeText(context, "${track.title} is now the Anchor BPM track", Toast.LENGTH_SHORT).show()
-                                            },
-                                            modifier = Modifier.size(28.dp)
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.equalizer),
-                                                contentDescription = "Set as Anchor",
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
+                                                Toast.makeText(context, "${track.title} is now Master Deck", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        onEmptyClick = {
+                                            activeSourceTab = "QUEUE"
+                                            Toast.makeText(context, "Select a song from Queue below for Deck ${slotIndex + 1}", Toast.LENGTH_SHORT).show()
                                         }
-                                        IconButton(
-                                            onClick = { selectedTracks.remove(track) },
-                                            modifier = Modifier.size(28.dp)
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.close),
-                                                contentDescription = "Remove",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        activeSourceTab = "QUEUE"
-                                        Toast.makeText(context, "Select a song from Queue below for Slot ${slotIndex + 1}", Toast.LENGTH_SHORT).show()
-                                    }
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text(
-                                                text = "${slotIndex + 1}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Text(
-                                        text = "+ Tap to select from Queue for Slot ${slotIndex + 1}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
-                                        fontWeight = FontWeight.Medium
                                     )
                                 }
                             }
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            for (slotIndex in 2..3) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    val track = selectedTracks.getOrNull(slotIndex)
+                                    DjDeckGridCard(
+                                        slotIndex = slotIndex,
+                                        track = track,
+                                        onRemove = { selectedTracks.remove(track) },
+                                        onMakeMaster = {
+                                            if (track != null) {
+                                                val currentAnchor = selectedTracks[0]
+                                                selectedTracks[0] = track
+                                                selectedTracks[slotIndex] = currentAnchor
+                                                Toast.makeText(context, "${track.title} is now Master Deck", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        onEmptyClick = {
+                                            activeSourceTab = "QUEUE"
+                                            Toast.makeText(context, "Select a song from Queue below for Deck ${slotIndex + 1}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        for (slotIndex in 0 until 4) {
+                            val track = selectedTracks.getOrNull(slotIndex)
+                            DjDeckCarouselCard(
+                                slotIndex = slotIndex,
+                                track = track,
+                                onRemove = { selectedTracks.remove(track) },
+                                onMakeMaster = {
+                                    if (track != null) {
+                                        val currentAnchor = selectedTracks[0]
+                                        selectedTracks[0] = track
+                                        selectedTracks[slotIndex] = currentAnchor
+                                        Toast.makeText(context, "${track.title} is now Master Deck", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                onEmptyClick = {
+                                    activeSourceTab = "QUEUE"
+                                    Toast.makeText(context, "Select a song from Queue for Deck ${slotIndex + 1}", Toast.LENGTH_SHORT).show()
+                                }
+                            )
                         }
                     }
                 }
@@ -636,8 +606,8 @@ fun DynamicMashupDialog(
                                         contentDescription = null,
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(RoundedCornerShape(6.dp))
+                                            .size(48.dp)
+                                            .clip(RoundedCornerShape(8.dp))
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
@@ -659,7 +629,7 @@ fun DynamicMashupDialog(
                                                     Text(
                                                         text = "Queue #${queueIdx + 1}",
                                                         style = MaterialTheme.typography.labelSmall,
-                                                        fontSize = 9.sp,
+                                                        fontSize = 10.sp,
                                                         fontWeight = FontWeight.SemiBold,
                                                         color = MaterialTheme.colorScheme.onTertiaryContainer,
                                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
@@ -678,16 +648,17 @@ fun DynamicMashupDialog(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     if (isSelected) {
                                         Surface(
-                                            shape = RoundedCornerShape(12.dp),
+                                            shape = RoundedCornerShape(8.dp),
                                             color = if (isAnchor) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                                             modifier = Modifier.padding(end = 4.dp)
                                         ) {
                                             Text(
-                                                text = if (isAnchor) "Slot 1 (Anchor)" else "Slot ${slotIndex + 1}",
+                                                text = if (isAnchor) "DECK 1 (MASTER)" else "DECK ${slotIndex + 1}",
                                                 style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontSize = 10.sp,
                                                 color = if (isAnchor) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                                             )
                                         }
                                         Surface(
@@ -796,3 +767,305 @@ fun DynamicMashupDialog(
         }
     )
 }
+
+@Composable
+private fun DjDeckGridCard(
+    slotIndex: Int,
+    track: MediaMetadata?,
+    onRemove: () -> Unit,
+    onMakeMaster: () -> Unit,
+    onEmptyClick: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = if (slotIndex == 0) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+        else if (track != null) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+        border = androidx.compose.foundation.BorderStroke(
+            width = if (slotIndex == 0) 1.5.dp else 1.dp,
+            color = if (slotIndex == 0) MaterialTheme.colorScheme.primary
+            else if (track != null) MaterialTheme.colorScheme.outlineVariant
+            else MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(98.dp)
+            .clickable(enabled = track == null, onClick = onEmptyClick)
+    ) {
+        if (track != null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (slotIndex == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                    ) {
+                        Text(
+                            text = if (slotIndex == 0) "🎧 DECK 1 (MASTER)" else "🎛️ DECK ${slotIndex + 1}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 10.sp,
+                            color = if (slotIndex == 0) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                    if (slotIndex > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = onMakeMaster,
+                                modifier = Modifier.size(22.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.equalizer),
+                                    contentDescription = "Make Master",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(2.dp))
+                            IconButton(
+                                onClick = onRemove,
+                                modifier = Modifier.size(22.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.close),
+                                    contentDescription = "Remove",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    AsyncImage(
+                        model = track.thumbnailUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = track.title,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = track.artists.joinToString(", ") { it.name },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        } else {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(6.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    modifier = Modifier.size(34.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.add),
+                            contentDescription = "Add to Deck ${slotIndex + 1}",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "DECK ${slotIndex + 1} (EMPTY)",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Tap to pick from Queue",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 9.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DjDeckCarouselCard(
+    slotIndex: Int,
+    track: MediaMetadata?,
+    onRemove: () -> Unit,
+    onMakeMaster: () -> Unit,
+    onEmptyClick: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = if (slotIndex == 0) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+        else if (track != null) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+        border = androidx.compose.foundation.BorderStroke(
+            width = if (slotIndex == 0) 2.dp else 1.dp,
+            color = if (slotIndex == 0) MaterialTheme.colorScheme.primary
+            else if (track != null) MaterialTheme.colorScheme.outlineVariant
+            else MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+        ),
+        modifier = Modifier
+            .width(160.dp)
+            .height(180.dp)
+            .clickable(enabled = track == null, onClick = onEmptyClick)
+    ) {
+        if (track != null) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (slotIndex == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                    ) {
+                        Text(
+                            text = if (slotIndex == 0) "DECK 1 (MASTER)" else "DECK ${slotIndex + 1}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            color = if (slotIndex == 0) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                    if (slotIndex > 0) {
+                        IconButton(
+                            onClick = onRemove,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.close),
+                                contentDescription = "Remove",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+                AsyncImage(
+                    model = track.thumbnailUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = track.title,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = track.artists.joinToString(", ") { it.name },
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (slotIndex > 0) {
+                    FilledTonalButton(
+                        onClick = onMakeMaster,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                        modifier = Modifier.height(26.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.equalizer),
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Make Master", fontSize = 10.sp)
+                    }
+                } else {
+                    Spacer(modifier = Modifier.height(2.dp))
+                }
+            }
+        } else {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    modifier = Modifier.size(46.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.add),
+                            contentDescription = "Add Deck ${slotIndex + 1}",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "DECK ${slotIndex + 1} (EMPTY)",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Tap to pick from Queue",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp
+                )
+            }
+        }
+    }
+}
+
