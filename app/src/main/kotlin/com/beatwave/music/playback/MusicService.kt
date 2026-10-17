@@ -420,6 +420,8 @@ class MusicService :
     private var isCrossfading = false
     private val _isCrossfadingFlow = MutableStateFlow(false)
     val isCrossfadingFlow: kotlinx.coroutines.flow.StateFlow<Boolean> = _isCrossfadingFlow.asStateFlow()
+    var activeCrossfadeDurationMs: Long = 5000L
+        private set
     private var crossfadeJob: Job? = null
     private var duckVolumeRestoreJob: Job? = null
 
@@ -4404,6 +4406,7 @@ class MusicService :
     }
 
     private fun performCrossfadeSwap(durationMs: Long = crossfadeDuration.toLong()) {
+        activeCrossfadeDurationMs = durationMs
         isCrossfading = true
         _isCrossfadingFlow.value = true
         val nextPlayer = secondaryPlayer ?: return

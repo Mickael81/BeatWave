@@ -38,6 +38,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Icon
@@ -239,7 +241,7 @@ fun MorphingBurnOverlay(
     progress: Float,
     modifier: Modifier = Modifier
 ) {
-    if (progress <= 0.01f || progress >= 0.99f) return
+    if (progress <= 0.005f || progress >= 0.995f) return
 
     val density = LocalDensity.current
     Canvas(modifier = modifier.fillMaxSize()) {
@@ -247,43 +249,69 @@ fun MorphingBurnOverlay(
         val h = size.height
 
         val burnY = h * (1f - progress)
-        val flameHeight = h * 0.22f
+        val flameHeight = (h * 0.20f).coerceAtLeast(40.dp.toPx())
         val peakIntensity = kotlin.math.sin(progress * Math.PI.toFloat())
 
-        // Hot incandescent flame boundary gradient
+        // Hot incandescent flame boundary gradient centered right on burnY
         val flameBrush = Brush.verticalGradient(
             colors = listOf(
                 Color.Transparent,
-                Color(0xFFFF1744).copy(alpha = 0.55f * peakIntensity),
+                Color(0xFFFF1744).copy(alpha = 0.50f * peakIntensity),
                 Color(0xFFFF6D00).copy(alpha = 0.85f * peakIntensity),
                 Color(0xFFFFEA00).copy(alpha = 0.95f * peakIntensity),
-                Color(0xFFFFFFFF).copy(alpha = 0.85f * peakIntensity),
-                Color(0xFFFF6D00).copy(alpha = 0.75f * peakIntensity),
-                Color(0xFF210500).copy(alpha = 0.90f * peakIntensity),
+                Color(0xFFFFFFFF).copy(alpha = 0.90f * peakIntensity),
+                Color(0xFFFF6D00).copy(alpha = 0.80f * peakIntensity),
+                Color(0xFF210500).copy(alpha = 0.70f * peakIntensity),
                 Color.Transparent
             ),
             startY = (burnY - flameHeight).coerceAtLeast(0f),
-            endY = (burnY + flameHeight * 0.6f).coerceAtMost(h)
+            endY = (burnY + flameHeight * 0.5f).coerceAtMost(h)
         )
 
         drawRect(
             brush = flameBrush,
             topLeft = Offset(0f, (burnY - flameHeight).coerceAtLeast(0f)),
-            size = GeometrySize(w, flameHeight * 1.6f),
+            size = GeometrySize(w, flameHeight * 1.5f),
             blendMode = BlendMode.Screen
         )
 
-        // Flying fiery sparks and embers rising from burn line
-        val sparkCount = 20
+        // Fluid undulating incandescent core seam across the width
+        val wavePoints = 40
+        var prevX = 0f
+        var prevY = burnY
+        for (step in 1..wavePoints) {
+            val currX = (step.toFloat() / wavePoints) * w
+            val waveOffset = kotlin.math.sin((currX / w * 12.0) + (progress * 18.0)).toFloat() * (h * 0.015f * peakIntensity)
+            val currY = burnY + waveOffset
+            drawLine(
+                color = Color(0xFFFFFFFF).copy(alpha = 0.90f * peakIntensity),
+                start = Offset(prevX, prevY),
+                end = Offset(currX, currY),
+                strokeWidth = with(density) { (2.5f * peakIntensity).dp.toPx() },
+                blendMode = BlendMode.Screen
+            )
+            drawLine(
+                color = Color(0xFFFFD600).copy(alpha = 0.75f * peakIntensity),
+                start = Offset(prevX, prevY),
+                end = Offset(currX, currY),
+                strokeWidth = with(density) { (6.0f * peakIntensity).dp.toPx() },
+                blendMode = BlendMode.Screen
+            )
+            prevX = currX
+            prevY = currY
+        }
+
+        // Flying fiery sparks and embers rising upward from burn line
+        val sparkCount = 32
         for (i in 0 until sparkCount) {
-            val normSeed = (((i * 197) xor (progress * 800).toInt()) and 0x7FFFFFFF) % 1000 / 1000f
-            val sparkX = (i.toFloat() / sparkCount.toFloat()) * w + ((normSeed - 0.5f) * (w * 0.16f))
-            val lift = ((progress * 3.2f + (i * 0.21f)) % 1f)
-            val sparkY = burnY - (lift * h * 0.38f)
+            val normSeed = (((i * 223) xor (progress * 1200).toInt()) and 0x7FFFFFFF) % 1000 / 1000f
+            val sparkX = (i.toFloat() / sparkCount.toFloat()) * w + ((normSeed - 0.5f) * (w * 0.18f))
+            val lift = ((progress * 3.5f + (i * 0.17f)) % 1f)
+            val sparkY = burnY - (lift * h * 0.42f)
 
             if (sparkY in 0f..h && sparkX in 0f..w) {
-                val sparkAlpha = ((1f - lift) * peakIntensity * 0.9f).coerceIn(0f, 1f)
-                val sparkRadius = with(density) { (1.5f + (normSeed * 2.5f)).dp.toPx() }
+                val sparkAlpha = ((1f - lift) * peakIntensity * 0.95f).coerceIn(0f, 1f)
+                val sparkRadius = with(density) { (1.5f + (normSeed * 2.8f)).dp.toPx() }
                 val sparkColor = when (i % 3) {
                     0 -> Color(0xFFFFEA00)
                     1 -> Color(0xFFFF6D00)
@@ -304,7 +332,7 @@ fun MorphingBurnOverlay(
 /**
  * Renders album cover art that morphs and cross-fades smoothly into the next song's
  * cover art during track changes (both auto-crossfade and manual skip/seek), matching
- * convxdemo.mp4 with fluid dissolve, burning away animation, and chromatic aberration.
+ * convxdemo.mp4 with fluid bottom-to-top reveal, burning away animation, and chromatic aberration.
  */
 @Composable
 fun MorphingCoverArt(
@@ -317,6 +345,7 @@ fun MorphingCoverArt(
     val context = LocalContext.current
     val playerConnection = LocalPlayerConnection.current
     val isCrossfading by (playerConnection?.isCrossfading ?: MutableStateFlow(false)).collectAsState()
+    val crossfadeDurationMs = playerConnection?.crossfadeDurationMs ?: 3000f
     val crossfadeBurnMorph by rememberPreference(CrossfadeBurnMorphKey, defaultValue = true)
 
     var currentUrl by remember { mutableStateOf(artworkUri) }
@@ -330,7 +359,7 @@ fun MorphingCoverArt(
                 outgoingUrl = currentUrl
                 progress.snapTo(0f)
                 val effectiveDuration = if (isCrossfading) {
-                    (playerConnection?.crossfadeDurationMs ?: 3000f).toInt().coerceIn(1200, 5000)
+                    crossfadeDurationMs.toInt().coerceAtLeast(1000)
                 } else {
                     animationDurationMillis
                 }
@@ -338,7 +367,7 @@ fun MorphingCoverArt(
                     targetValue = 1f,
                     animationSpec = tween(
                         durationMillis = effectiveDuration,
-                        easing = FastOutSlowInEasing
+                        easing = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1.0f)
                     )
                 )
                 outgoingUrl = null
@@ -347,62 +376,29 @@ fun MorphingCoverArt(
         }
     }
 
+    // Safety: If crossfade completes or cancels early, settle progress cleanly
+    LaunchedEffect(isCrossfading) {
+        if (!isCrossfading && progress.value in 0.01f..0.99f) {
+            progress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+            )
+            outgoingUrl = null
+        }
+    }
+
+    val p = progress.value
+
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // Outgoing artwork layer: burns / dissolves away smoothly
-        val outUrl = outgoingUrl
-        val p = progress.value
-        if (!outUrl.isNullOrBlank() && p < 1f) {
-            var activeOutUrl by remember(outUrl) { mutableStateOf<String?>(outUrl) }
-            val outAlpha = if (crossfadeBurnMorph) (1f - (p * 1.05f)).coerceIn(0f, 1f) else (1f - p).coerceIn(0f, 1f)
-            val outScale = 1f + (0.04f * p)
-
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(activeOutUrl)
-                    .size(CoilSize.ORIGINAL)
-                    .crossfade(false)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .networkCachePolicy(CachePolicy.ENABLED)
-                    .build(),
-                onError = { activeOutUrl = nextThumbnailFallback(activeOutUrl) },
-                contentDescription = null,
-                contentScale = contentScale,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(
-                        if (crossfadeBurnMorph) {
-                            Modifier.drawWithContent {
-                                drawContent()
-                                val burnY = size.height * (1f - p)
-                                val charHeight = size.height * 0.12f
-                                drawRect(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(Color.Transparent, Color(0xDD210500), Color(0xFF000000)),
-                                        startY = (burnY - charHeight).coerceAtLeast(0f),
-                                        endY = burnY
-                                    ),
-                                    blendMode = BlendMode.SrcAtop
-                                )
-                            }
-                        } else Modifier
-                    )
-                    .graphicsLayer {
-                        alpha = outAlpha
-                        scaleX = outScale
-                        scaleY = outScale
-                    }
-            )
-        }
-
-        // Incoming artwork layer
+        // LAYER 1 (BASE): Incoming artwork layer — unveiled from bottom to top as flame seam rises!
         val curUrl = currentUrl
         if (!curUrl.isNullOrBlank()) {
             var activeCurUrl by remember(curUrl) { mutableStateOf<String?>(curUrl) }
-            val inAlpha = if (outgoingUrl != null) (p * 1.15f).coerceIn(0f, 1f) else 1f
+            val inAlpha = if (outgoingUrl != null && !crossfadeBurnMorph) p.coerceIn(0f, 1f) else 1f
+            val inTranslateY = if (outgoingUrl != null) with(LocalDensity.current) { ((1f - p) * 16.dp).toPx() } else 0f
             val inScale = if (outgoingUrl != null) (0.95f + (0.05f * p)) else 1f
 
             // Chromatic aberration morph effect during track transition (matching convxdemo.mp4)
@@ -429,6 +425,7 @@ fun MorphingCoverArt(
                         .graphicsLayer {
                             alpha = (inAlpha * 0.7f).coerceIn(0f, 1f)
                             translationX = -chromaticOffsetPx
+                            translationY = inTranslateY
                             scaleX = inScale
                             scaleY = inScale
                         }
@@ -452,13 +449,14 @@ fun MorphingCoverArt(
                         .graphicsLayer {
                             alpha = (inAlpha * 0.7f).coerceIn(0f, 1f)
                             translationX = chromaticOffsetPx
+                            translationY = inTranslateY
                             scaleX = inScale
                             scaleY = inScale
                         }
                 )
             }
 
-            // Primary artwork image
+            // Primary incoming artwork image
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(activeCurUrl)
@@ -477,6 +475,7 @@ fun MorphingCoverArt(
                     .fillMaxSize()
                     .graphicsLayer {
                         alpha = inAlpha
+                        translationY = inTranslateY
                         scaleX = inScale
                         scaleY = inScale
                     }
@@ -497,8 +496,72 @@ fun MorphingCoverArt(
             }
         }
 
-        // Burning flame & ember spark overlay when burning morph is enabled
-        if (crossfadeBurnMorph && outgoingUrl != null && p in 0.01f..0.99f) {
+        // LAYER 2 (TOP): Outgoing artwork layer — burns away from bottom to top!
+        val outUrl = outgoingUrl
+        if (!outUrl.isNullOrBlank() && p < 1f) {
+            var activeOutUrl by remember(outUrl) { mutableStateOf<String?>(outUrl) }
+            val outAlpha = if (crossfadeBurnMorph) 1f else (1f - p).coerceIn(0f, 1f)
+            val outScale = 1f + (0.03f * p)
+
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(activeOutUrl)
+                    .size(CoilSize.ORIGINAL)
+                    .crossfade(false)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .networkCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                onError = { activeOutUrl = nextThumbnailFallback(activeOutUrl) },
+                contentDescription = null,
+                contentScale = contentScale,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (crossfadeBurnMorph) {
+                            Modifier.drawWithContent {
+                                val burnY = size.height * (1f - p)
+                                clipRect(
+                                    left = 0f,
+                                    top = 0f,
+                                    right = size.width,
+                                    bottom = burnY
+                                ) {
+                                    this@drawWithContent.drawContent()
+                                }
+
+                                // Glowing charred disintegration edge along bottom cut
+                                if (burnY in 0f..size.height) {
+                                    val charHeight = (size.height * 0.10f).coerceAtLeast(16.dp.toPx())
+                                    drawRect(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color.Transparent,
+                                                Color(0xEE1C0500),
+                                                Color(0xFFE65100).copy(alpha = 0.85f),
+                                                Color(0xFFFFD54F)
+                                            ),
+                                            startY = (burnY - charHeight).coerceAtLeast(0f),
+                                            endY = burnY
+                                        ),
+                                        topLeft = Offset(0f, (burnY - charHeight).coerceAtLeast(0f)),
+                                        size = GeometrySize(size.width, charHeight),
+                                        blendMode = BlendMode.SrcAtop
+                                    )
+                                }
+                            }
+                        } else Modifier
+                    )
+                    .graphicsLayer {
+                        alpha = outAlpha
+                        scaleX = outScale
+                        scaleY = outScale
+                    }
+            )
+        }
+
+        // LAYER 3 (OVERLAY): Glowing incandescent flame seam & rising sparks
+        if (crossfadeBurnMorph && outgoingUrl != null && p in 0.005f..0.995f) {
             MorphingBurnOverlay(
                 progress = p,
                 modifier = Modifier.fillMaxSize()

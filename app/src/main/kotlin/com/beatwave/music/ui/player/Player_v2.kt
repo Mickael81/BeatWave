@@ -114,6 +114,12 @@ import com.beatwave.music.ui.theme.PlayerColorExtractor
 import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.beatwave.music.ui.component.DynamicMashupDialog
+import android.widget.Toast
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Button
 
 enum class PlayerInternalState { COVER, LYRICS, QUEUE }
 
@@ -250,6 +256,7 @@ fun PlayerV2(
     val gradientColorsCache = remember { mutableMapOf<String, List<Color>>() }
 
     var showAudioDeviceBottomSheet by remember { mutableStateOf(false) }
+    var showDynamicMashupDialog by rememberSaveable { mutableStateOf(false) }
     
     val bluetoothDeviceName by produceState<String?>(initialValue = getConnectedBluetoothDeviceName(context)) {
         val am = context.getSystemService(android.content.Context.AUDIO_SERVICE) as AudioManager
@@ -581,7 +588,38 @@ fun PlayerV2(
                                                 mediaMetadata?.artists?.firstOrNull()?.id?.let { navController.navigate("artist/$it") }
                                             }
                                         )
-                                        DjReadout(modifier = Modifier.padding(top = 2.dp))
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            modifier = Modifier.padding(top = 2.dp)
+                                        ) {
+                                            DjReadout()
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = if (DynamicMashupController.isActive) MaterialTheme.colorScheme.primaryContainer else adaptivePrimary.copy(alpha = 0.12f),
+                                                modifier = Modifier.clickable { showDynamicMashupDialog = true }
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.equalizer),
+                                                        contentDescription = "DJ Song Mashup Studio",
+                                                        tint = if (DynamicMashupController.isActive) MaterialTheme.colorScheme.primary else adaptivePrimary,
+                                                        modifier = Modifier.size(13.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text(
+                                                        text = if (DynamicMashupController.isActive) "DJ ON" else "DJ Mix",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (DynamicMashupController.isActive) MaterialTheme.colorScheme.primary else adaptivePrimary,
+                                                        fontSize = 10.sp
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
 
                                     Row(
@@ -915,57 +953,103 @@ fun PlayerV2(
                         // Live DJ Mashup Deck Banner
                         if (DynamicMashupController.isActive) {
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
+                                shape = RoundedCornerShape(14.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 8.dp)
+                                    .clickable { showDynamicMashupDialog = true }
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.equalizer),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.equalizer),
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
                                         Column {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    text = "DJ MASHUP LIVE",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = "• ${DynamicMashupController.currentStyle.title}",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
                                             Text(
-                                                text = "DJ MASHUP LIVE • ${DynamicMashupController.currentStyle.title}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
-                                            Text(
-                                                text = "Phrase cut in ${DynamicMashupController.secondsRemaining}s • Swaps: ${DynamicMashupController.totalSwaps}",
+                                                text = "Next swap in ${DynamicMashupController.secondsRemaining}s • Swaps: ${DynamicMashupController.totalSwaps}",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                fontSize = 10.sp,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
                                             )
                                         }
                                     }
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        TextButton(
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        FilledTonalButton(
                                             onClick = { DynamicMashupController.triggerImmediateCut() },
-                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 1.dp)
+                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                            modifier = Modifier.height(30.dp)
                                         ) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.sparks),
+                                                contentDescription = "Cut Now",
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
                                             Text("Cut Now", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                         }
-                                        IconButton(
-                                            onClick = { DynamicMashupController.stopMashup() },
-                                            modifier = Modifier.size(22.dp)
+                                        Button(
+                                            onClick = {
+                                                DynamicMashupController.stopMashup()
+                                                Toast.makeText(context, "DJ Mashup stopped", Toast.LENGTH_SHORT).show()
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.error,
+                                                contentColor = MaterialTheme.colorScheme.onError
+                                            ),
+                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                            modifier = Modifier.height(30.dp)
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.close),
                                                 contentDescription = "Stop Mashup",
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                modifier = Modifier.size(14.dp)
+                                                modifier = Modifier.size(13.dp)
                                             )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Stop", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                         }
                                     }
                                 }
@@ -1240,6 +1324,13 @@ fun PlayerV2(
         
         if (showAudioDeviceBottomSheet) {
             AudioDeviceBottomSheet(onDismiss = { showAudioDeviceBottomSheet = false })
+        }
+
+        if (showDynamicMashupDialog && mediaMetadata != null) {
+            DynamicMashupDialog(
+                initialSong = mediaMetadata,
+                onDismiss = { showDynamicMashupDialog = false }
+            )
         }
     }
 }

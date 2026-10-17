@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -647,8 +648,32 @@ fun DynamicMashupDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (com.beatwave.music.playback.DynamicMashupController.isActive) {
+                    FilledTonalButton(
+                        onClick = {
+                            com.beatwave.music.playback.DynamicMashupController.stopMashup()
+                            Toast.makeText(context, "DJ Mashup stopped", Toast.LENGTH_SHORT).show()
+                            onDismiss()
+                        },
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.close),
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Stop Mashup", fontWeight = FontWeight.Bold)
+                    }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
         }
     )
