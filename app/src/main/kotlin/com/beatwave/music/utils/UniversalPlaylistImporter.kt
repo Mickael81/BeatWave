@@ -7,7 +7,7 @@ package com.beatwave.music.utils
 
 import com.beatwave.music.db.entities.ArtistEntity
 import com.beatwave.music.db.entities.SongEntity
-import com.beatwave.music.models.Song
+import com.beatwave.music.db.entities.Song
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
