@@ -1056,17 +1056,3 @@ private fun DjDeckConsoleCard(
         }
     }
 }
-
-/**
- * Backward compatibility alias for DynamicMashupDialog.
- */
-@Composable
-fun DynamicMashupDialog(
-    initialSong: MediaMetadata,
-    onDismiss: () -> Unit,
-) {
-    DjConsoleDialog(
-        initialSong = initialSong,
-        onDismiss = onDismiss,
-    )
-}

@@ -558,6 +558,21 @@ class PlayerConnection(
             Timber.tag(TAG).e(e, "Error during PlayerConnection disposal")
         }
     }
+
+    /** Triggers a real-time DJ transition into the target track with custom duration and effect style. */
+    fun triggerDjTransitionToTrack(
+        targetIndex: Int,
+        startPositionMs: Long = 0L,
+        durationMs: Long = 2500L,
+        style: com.beatwave.music.playback.dj.TransitionStyle? = null,
+    ) {
+        service.startManualTrackTransition(
+            targetIndex = targetIndex,
+            startPositionMs = startPositionMs,
+            transitionDurationMs = durationMs,
+            forcedStyle = style,
+        )
+    }
 }
 
 class CrossfadeForwardingPlayer(
@@ -622,20 +637,5 @@ class CrossfadeForwardingPlayer(
             }
         }
         super.seekToPreviousMediaItem()
-    }
-
-    /** Triggers a real-time DJ transition into the target track with custom duration and effect style. */
-    fun triggerDjTransitionToTrack(
-        targetIndex: Int,
-        startPositionMs: Long = 0L,
-        durationMs: Long = 2500L,
-        style: com.beatwave.music.playback.dj.TransitionStyle? = null,
-    ) {
-        service.startManualTrackTransition(
-            targetIndex = targetIndex,
-            startPositionMs = startPositionMs,
-            transitionDurationMs = durationMs,
-            forcedStyle = style,
-        )
     }
 }
