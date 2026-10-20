@@ -711,4 +711,387 @@
     <string name="decryption_library_pipepipe_api">API PipePipe</string>
     <string name="decryption_library_pipepipe_api_desc">Décryptage basé sur l&#39;API utilisant MetroExtractor. Plus rapide mais dépend d&#39;une API externe. Basculement automatique vers NewPipe en cas d&#39;échec.</string>
 
+	<!-- Listen Together -->
+    <string name="together">Ensemble</string>
+    <string name="listen_together">Écoute partagée</string>
+    <string name="listen_together_desc">Écoutez de la musique avec des amis en temps réel</string>
+    <string name="listen_together_server_url">URL du serveur</string>
+    <string name="listen_together_choose_server">Choisir le serveur</string>
+    <string name="listen_together_custom_server">Serveur personnalisé</string>
+    <string name="listen_together_use_custom_server">Utiliser un serveur personnalisé</string>
+    <string name="listen_together_username">Nom d&#39;utilisateur</string>
+    <string name="listen_together_connected">Connecté</string>
+    <string name="listen_together_reconnecting">Reconnexion en cours…</string>
+    <string name="listen_together_disconnected">Déconnecté</string>
+    <string name="listen_together_connecting">Connexion en cours…</string>
+    <string name="listen_together_error">Erreur de connexion</string>
+    <string name="listen_together_create_room">Créer un salon</string>
+    <string name="listen_together_create_room_desc">Créer un salon et partager le code avec des amis</string>
+    <string name="listen_together_join_room">Rejoindre un salon</string>
+    <string name="listen_together_room_code">Code du salon</string>
+    <string name="listen_together_leave_room">Quitter le salon</string>
+    <string name="listen_together_you_are_host">Vous êtes l&#39;hôte</string>
+    <string name="listen_together_you_are_guest">Vous êtes un invité</string>
+    <string name="mute">Couper le son</string>
+    <string name="unmute">Rétablir le son</string>
+    <string name="listen_together_users">%d utilisateurs dans le salon</string>
+    <string name="listen_together_join_requests">Demandes de participation</string>
+    <string name="listen_together_view_logs">Afficher les journaux</string>
+    <string name="listen_together_view_logs_desc">Déboguer la connexion et les messages</string>
+    <string name="listen_together_logs">Journaux de connexion</string>
+    <string name="listen_together_no_logs">Aucun journal pour le moment</string>
+    <string name="listen_together_auto_approval">Approbation automatique des demandes</string>
+    <string name="listen_together_auto_approval_desc">Approuver automatiquement les demandes de participation au lieu de les examiner manuellement</string>
+    <string name="listen_together_sync_volume">Synchroniser le volume de l&#39;hôte</string>
+    <string name="listen_together_sync_volume_desc">Les invités suivent le niveau du volume de l&#39;hôte</string>
+    <string name="listen_together_in_top_bar">Écoute partagée dans la barre supérieure</string>
+    <string name="listen_together_in_top_bar_desc">Afficher l&#39;écoute partagée dans la barre d&#39;application supérieure au lieu de la barre de navigation</string>
+    <string name="listen_together_description">Écoutez de la musique avec vos amis en temps réel. Créez un salon pour être l&#39;hôte ou rejoignez un salon existant avec un code.</string>
+    <string name="listen_together_background_disconnect_note">Remarque : vous risquez d&#39;&#39;être déconnecté si vous créez un salon alors qu&#39;aucune musique n&#39;est jouée et que vous basculez vers une autre application.</string>
+    <string name="listen_together_not_configured">L&#39;écoute partagée n&#39;est pas configurée. Veuillez définir l&#39;URL du serveur dans Paramètres → Intégrations → Écoute partagée.</string>
+    <string name="listen_together_suggestion_received">%1$s a demandé %2$s</string>
+    <string name="listen_together_suggestion_sent">Suggestion envoyée à l&#39;hôte !</string>
+    <string name="listen_together_auto_add">File d&#39;attente collaborative</string>
+    <string name="listen_together_auto_add_desc">Tout le monde dans le salon peut ajouter des éléments à la file d&#39;attente sans attendre votre approbation</string>
+    <string name="listen_together_auto_added">%1$s a ajouté %2$s</string>
+    <string name="listen_together_tap_code_to_copy">Appuyez sur le code pour le copier</string>
+    <string name="listen_together_in_the_room">Dans le salon</string>
+    <string name="listen_together_your_name">Votre nom</string>
+    <string name="listen_together_or_join">ou rejoindre un salon</string>
+    <string name="listen_together_suggested_by">Suggéré par %1$s</string>
+    <string name="listen_together_tap_member_hint">Appuyez sur une personne pour l&#39;exclure ou lui transférer le salon</string>
+    <string name="listen_together_wants_to_join">souhaite rejoindre votre salon</string>
+    <string name="listen_together_added_to_queue">Ajouté à la file d&#39;attente : %1$s</string>
+    <string name="listen_together_added_to_queue_by">%1$s a ajouté %2$s à la file d&#39;attente</string>
+    <string name="listen_together_control_mode">Contrôle de la lecture</string>
+    <string name="listen_together_control_owner">Vous uniquement</string>
+    <string name="listen_together_control_everyone">Tout le monde</string>
+    <string name="listen_together_control_owner_desc">Vous seul pouvez lancer, mettre en pause et passer des morceaux</string>
+    <string name="listen_together_control_everyone_desc">Tout le monde dans le salon peut lancer, mettre en pause et passer des morceaux</string>
+    <string name="listen_together_session_ends">La session se termine dans %1$s</string>
+    <string name="listen_together_session_ending_soon">Ce salon ferme dans %1$s</string>
+    <string name="listen_together_extend">Prolonger</string>
+    <string name="listen_together_extensions_left">%1$d restants</string>
+    <string name="listen_together_room_closed">Salon fermé</string>
+    <string name="listen_together_shared_session_note">Les salons sont temporaires et partagés — tout le monde ici voit le même compte à rebours.</string>
+    <string name="listen_together_join_request_notification">%1$s souhaite rejoindre le salon</string>
+    <string name="listen_together_notification_channel_name">Écoute partagée</string>
+    <string name="listen_together_notification_channel_desc">Notifications pour les événements d&#39;écoute partagée</string>
+    <string name="listen_together_room_created">Salon créé : %s</string>
+    <string name="listen_together_local_offline_sync">Synchronisation locale hors ligne</string>
+    <string name="offline_sync">Synchronisation hors ligne</string>
+    <string name="listen_together_host_local">Héberger la synchronisation locale</string>
+    <string name="listen_together_host_local_desc">Diffuser le flux musical via Wi-Fi / Point d&#39;accès</string>
+    <string name="listen_together_join_local">Rejoindre la synchronisation locale</string>
+    <string name="listen_together_join_local_desc">Découvrir et rejoindre un flux de synchronisation locale à proximité</string>
+    <string name="listen_together_discovering_devices">Recherche d&#39;hôtes à proximité…</string>
+    <string name="listen_together_no_devices_found">Aucun hôte à proximité trouvé</string>
+    <string name="listen_together_cannot_edit_username_in_room">Impossible de modifier le nom d&#39;utilisateur dans un salon</string>
+    <string name="waiting_for_approval">En attente de l&#39;approbation de l&#39;hôte</string>
+    <string name="invalid_room_code">Code de salon invalide</string>
+    <string name="join_request_denied">Demande de participation refusée</string>
+    <string name="join_existing_room">Rejoindre un salon existant</string>
+    <string name="room_code">Code du salon</string>
+    <string name="leave_room">Quitter le salon</string>
+    <string name="join_room">Rejoindre</string>
+    <string name="create_room">Créer</string>
+    <string name="joining_room">Connexion au salon %s…</string>
+    <string name="creating_room">Création du salon…</string>
+    <string name="connect">Se connecter</string>
+    <string name="disconnect">Se déconnecter</string>
+    <string name="reconnect">Se reconnecter</string>
+    <string name="create">Créer</string>
+    <string name="join">Rejoindre</string>
+    <string name="approve">Approuver</string>
+    <string name="reject">Rejeter</string>
+    <string name="clear">Effacer</string>
+    <string name="copy">Copier</string>
+    <string name="change">Modifier</string>
+    <string name="copied_to_clipboard">Copié dans le presse-papiers</string>
+    <string name="not_set">Non défini</string>
+    <string name="hosting_room">Salon hébergé</string>
+    <string name="in_room">Dans le salon</string>
+    <string name="pending_requests">Demandes en attente</string>
+    <string name="pending_suggestions">Suggestions en attente</string>
+    <string name="suggest_to_host">Suggérer à l&#39;hôte</string>
+    <string name="kick_user">Exclure</string>
+    <string name="transfer_host">Transférer le salon</string>
+    <string name="host_label">Hôte</string>
+    <string name="you_label">Vous</string>
+    <string name="connected_users">Utilisateurs connectés</string>
+    <string name="enter_username">Entrer le nom d&#39;utilisateur</string>
+    <string name="enter_room_code">Entrer le code du salon</string>
+    <string name="listen_together_settings_desc">Configurer le serveur, le nom d&#39;utilisateur et plus encore</string>
+    <string name="error_username_empty">Le nom d&#39;utilisateur est requis.</string>
+    <string name="resync">Resynchroniser</string>
+    <string name="copy_code">Copier le code</string>
+    <string name="kick_user_desc">Retirer cette personne de la session</string>
+    <string name="permanently_kick_user">Bloquer définitivement</string>
+    <string name="permanently_kick_user_desc">Bloquer les demandes de participation de cette personne et masquer ses suggestions</string>
+    <string name="transfer_ownership">Transférer la propriété</string>
+    <string name="transfer_ownership_desc">Faire de cette personne l&#39;hôte du salon</string>
+    <string name="manage_user">Gérer l&#39;utilisateur</string>
+    <string name="listen_together_blocked_users">Utilisateurs bloqués</string>
+    <string name="listen_together_blocked_users_count">%d utilisateur(s) bloqué(s)</string>
+    <string name="listen_together_no_blocked_users">Aucun utilisateur bloqué</string>
+    <string name="unblock">Débloquer</string>
+    <string name="user_blocked_by_host">Utilisateur bloqué par l&#39;hôte</string>
+
+	<!-- AI Lyrics Translation -->
+    <string name="ai_lyrics_translation">Traduction des paroles par IA</string>
+    <string name="ai_translating_lyrics">Traduction des paroles en cours…</string>
+    <string name="ai_lyrics_translated">Paroles traduites</string>
+    <string name="ai_provider">Fournisseur</string>
+    <string name="ai_base_url">URL de base</string>
+    <string name="ai_api_key">Clé API</string>
+    <string name="ai_model">Modèle</string>
+    <string name="ai_translation_mode">Mode de traduction</string>
+    <string name="ai_target_language">Langue cible</string>
+    <string name="ai_setup_guide">Identifiants API</string>
+    <string name="ai_translation_literal">Traduction</string>
+    <string name="ai_translation_literal_desc">Traduire le sens dans la langue cible</string>
+    <string name="ai_translation_transcribed">Transcription</string>
+    <string name="ai_translation_transcribed_desc">Convertir la prononciation dans l&#39;écriture cible</string>
+    <string name="ai_api_key_required">Clé API requise</string>
+    <string name="ai_error_api_key_required">La clé API est requise</string>
+    <string name="ai_error_no_lyrics">Aucune parole à traduire</string>
+    <string name="ai_error_lyrics_empty">Les paroles sont vides</string>
+    <string name="ai_error_language_required">La langue cible est requise</string>
+    <string name="ai_error_unexpected">Résultat de traduction inattendu</string>
+    <string name="ai_error_unknown">Une erreur inconnue s&#39;est produite</string>
+    <string name="ai_error_translation_failed">Échec de la traduction</string>
+    <string name="ai_provider_help">Obtenir des clés API</string>
+    <string name="ai_provider_openrouter_help">Visitez openrouter.ai pour les modèles gratuits et payants</string>
+    <string name="ai_provider_mistral_help">Visitez console.mistral.ai/api-keys</string>
+    <string name="ai_provider_openai_help">Visitez platform.openai.com/api-keys</string>
+    <string name="ai_provider_claude_help">Visitez console.anthropic.com/settings/keys</string>
+    <string name="ai_provider_gemini_help">Visitez aistudio.google.com/apikey</string>
+    <string name="ai_provider_perplexity_help">Visitez perplexity.ai/settings/api</string>
+    <string name="ai_provider_xai_help">Visitez console.x.ai</string>
+    <string name="ai_provider_deepl_help">Visitez deepl.com/pro-api pour les clés gratuites et payantes</string>
+    <string name="ai_deepl_formality">Niveau de langue</string>
+    <string name="ai_deepl_formality_default">Par défaut</string>
+    <string name="ai_deepl_formality_more">Plus soutenu</string>
+    <string name="ai_deepl_formality_less">Moins soutenu</string>
+
+    <!-- Crash Handler -->
+    <string name="crash_title">L&#39;application a planté</string>
+    <string name="crash_description">Une erreur inattendue s&#39;est produite. Veuillez partager le rapport de plantage pour nous aider à résoudre le problème.</string>
+    <string name="crash_share_logs">Partager les journaux</string>
+    <string name="copy_logs">Copier les journaux</string>
+    <string name="crash_share_title">Partager le rapport de plantage</string>
+    <string name="crash_report_subject">Rapport de plantage BeatWave</string>
+    <string name="crash_close">Fermer</string>
+    <string name="crash_no_log">Aucun journal de plantage disponible</string>
+
+    <!-- Theme Palette Names -->
+    <string name="palette_dynamic">Dynamique</string>
+    <string name="palette_apple_red">Rouge Apple</string>
+    <string name="palette_crimson">Cramoisi</string>
+    <string name="palette_rose">Rose</string>
+    <string name="palette_purple">Violet</string>
+    <string name="palette_deep_purple">Violet foncé</string>
+    <string name="palette_indigo">Indigo</string>
+    <string name="palette_blue">Bleu</string>
+    <string name="palette_sky_blue">Bleu ciel</string>
+    <string name="palette_cyan">Cyan</string>
+    <string name="palette_teal">Bleu canard</string>
+    <string name="palette_green">Vert</string>
+    <string name="palette_light_green">Vert clair</string>
+    <string name="palette_lime">Lime</string>
+    <string name="palette_yellow">Jaune</string>
+    <string name="palette_amber">Ambre</string>
+    <string name="palette_orange">Orange</string>
+    <string name="palette_deep_orange">Orange foncé</string>
+    <string name="palette_brown">Brun</string>
+    <string name="palette_grey">Gris</string>
+    <string name="palette_blue_grey">Gris bleu</string>
+
+    <!-- Theme Content Descriptions -->
+    <string name="cd_back">Retour</string>
+    <string name="cd_pure_black_mode">Mode noir pur</string>
+    <string name="cd_light_mode">Mode clair</string>
+    <string name="cd_dark_mode">Mode sombre</string>
+    <string name="cd_system_mode">Mode système</string>
+    <string name="cd_palette_item">Palette %1$s</string>
+    <string name="play_all">Tout lire</string>
+    <string name="see_all">Tout voir</string>
+    <string name="enable_high_refresh_rate">Activer le taux de rafraîchissement élevé</string>
+    <string name="enable_high_refresh_rate_desc">Forcer l&#39;affichage à utiliser le taux de rafraîchissement le plus élevé pris en charge (ex. 120 Hz)</string>
+
+	<!-- Music Recognition -->
+    <string name="recognition">Reconnaissance</string>
+    <string name="recognize_music">Reconnaître la musique</string>
+    <string name="tap_to_recognize">Appuyez pour reconnaître</string>
+    <string name="listening">Écoute en cours…</string>
+    <string name="processing">Traitement en cours…</string>
+    <string name="no_match_found">Aucun résultat trouvé</string>
+    <string name="recognition_error">Erreur de reconnaissance</string>
+    <string name="try_again">Réessayer</string>
+    <string name="recognition_history">Historique de reconnaissance</string>
+    <string name="clear_recognition_history">Effacer l&#39;historique de reconnaissance</string>
+    <string name="clear_recognition_history_confirm">Voulez-vous vraiment effacer tout l&#39;historique de reconnaissance ?</string>
+    <string name="delete_from_history">Supprimer de l&#39;historique</string>
+    <string name="re_listen">Réécouter</string>
+    <string name="hold_to_recognize">Maintenez l&#39;icône de recherche pour reconnaître la musique</string>
+    <string name="play_on_app">Lire sur BeatWave</string>
+    <string name="recognized_track">Morceau reconnu</string>
+
+    <!-- CSV Import Strings -->
+    <string name="map_csv_columns">Associer les colonnes CSV</string>
+    <string name="first_row_is_header">La première ligne est l&#39;en-tête</string>
+    <string name="artist_name_column">Colonne du nom d&#39;artiste</string>
+    <string name="song_title_column">Colonne du titre de morceau</string>
+    <string name="youtube_url_column">Colonne d&#39;URL YouTube (Optionnel)</string>
+    <string name="continue_action">Continuer</string>
+    <string name="importing_csv">Importation du CSV</string>
+    <string name="recently_converted">Récemment convertis</string>
+    <string name="column_label">Col %d</string>
+    <string name="csv_import_failed">Échec de l&#39;importation du fichier CSV</string>
+    <string name="csv_preview_failed">Échec de l&#39;aperçu du fichier CSV</string>
+
+    <!-- Discord Integration Redesign -->
+    <string name="discord_integration_settings">Intégration Discord</string>
+    <string name="discord_status">Statut</string>
+    <string name="discord_status_online">En ligne</string>
+    <string name="discord_status_idle">Inactif</string>
+    <string name="discord_status_dnd">Ne pas déranger</string>
+    <string name="discord_buttons">Boutons</string>
+    <string name="discord_button_1">Bouton 1</string>
+    <string name="discord_button_2">Bouton 2</string>
+    <string name="button_text">Texte du bouton</string>
+    <string name="button_visible">Visible</string>
+    <string name="login_successful">Connexion réussie !</string>
+    <string name="discord_information_warning">Cette fonctionnalité utilise la bibliothèque KizzyRPC pour se connecter à la passerelle de Discord et définir votre statut Rich Presence. Bien qu&#39;aucune suspension de compte connue ne se soit produite avec un usage similaire, cette méthode n&#39;est pas officiellement prise en charge par Discord et peut être considérée comme une violation des Conditions d&#39;utilisation. Votre jeton est extrait localement et n&#39;est jamais envoyé à des serveurs tiers. Procédez sous votre propre responsabilité.</string>
+    <string name="discord_activity_type">Type d&#39;activité</string>
+    <string name="discord_activity_playing">Joue à</string>
+    <string name="discord_activity_listening">Écoute</string>
+    <string name="discord_activity_watching">Regarde</string>
+    <string name="discord_activity_competing">Participe à</string>
+    <string name="discord_customization">Personnalisation</string>
+    <string name="discord_button_text_variables">Variables : {song_name}, {artist_name}, {album_name}</string>
+    <string name="discord_rpc_preview">Aperçu Rich Presence</string>
+    <string name="discord_presence">Présence</string>
+    <string name="discord_connect_description">Connectez-vous avec Discord pour partager ce que vous écoutez</string>
+    <string name="discord_playing_vivimusic">Joue à BeatWave</string>
+    <string name="discord_watching_vivimusic">Regarde BeatWave</string>
+    <string name="discord_competing_vivimusic">Participe à BeatWave</string>
+    <string name="discord_activity_name">Nom de l&#39;activité</string>
+    <string name="discord_activity_name_description">Nom personnalisé pour l&#39;activité (laisser vide par défaut)</string>
+    <string name="discord_advanced_mode">Mode avancé</string>
+    <string name="discord_advanced_mode_description">Afficher les options de personnalisation supplémentaires pour Rich Presence</string>
+    <string name="speed_dial">Accès rapide</string>
+    <string name="pin_to_speed_dial">Épingler à l&#39;accès rapide</string>
+    <string name="unpin_from_speed_dial">Désépingler de l&#39;accès rapide</string>
+    <string name="randomize_home_order">Mélanger l&#39;ordre de l&#39;écran d&#39;accueil</string>
+    <string name="randomize_home_order_desc">Réorganiser aléatoirement les sections de l&#39;écran d&#39;accueil selon des priorités pondérées</string>
+    <string name="show_home_fab">Afficher les boutons de recherche sonore + lecture aléatoire</string>
+    <string name="show_home_fab_desc">Boutons flottants de micro et de lecture aléatoire au bas de l&#39;Accueil</string>
+
+    <!-- Daily Discover -->
+    <string name="daily_discover_sounds_like">Ressemble à %1$s</string>
+    <string name="your_daily_discover">Votre découverte quotidienne</string>
+    <string name="daily_discover_because_you_listen_to">Parce que vous écoutez %1$s</string>
+    <string name="daily_discover_similar_to">Similaire à %1$s</string>
+    <string name="daily_discover_based_on">Basé sur %1$s</string>
+    <string name="daily_discover_for_fans_of">Pour les fans de %1$s</string>
+    <string name="from_the_community">De la communauté</string>
+    <string name="songs_count">%s titres</string>
+    <string name="repeat">Répéter</string>
+    <string name="monthly_listeners">Mensuel</string>
+    <string name="unlock_queue">Déverrouiller la file d&#39;attente</string>
+    <string name="lock_queue">Verrouiller la file d&#39;attente</string>
+<!--    //Members-->
+
+	<!-- ShowMediaInfo -->
+    <string name="song_info">Informations sur le morceau</string>
+    <string name="song_info_title_label">Titre</string>
+    <string name="song_info_format_label">Format</string>
+    <string name="song_info_duration_label">Durée</string>
+    <string name="song_info_itag_label">Itag</string>
+    <string name="song_info_standard">Standard</string>
+    <string name="song_info_views_count">%s vues</string>
+    <string name="song_info_likes_count">%s mentions J&#39;aime</string>
+    <string name="song_info_no_description">Aucune description disponible</string>
+
+<!--    changelog-->
+    <string name="error_loading_changelog">Erreur lors du chargement du journal des modifications</string>
+    <string name="no_old_releases_with_changelog">Aucune ancienne version avec journal des modifications trouvée</string>
+    <string name="failed_to_fetch_changelog">Échec de la récupération du journal des modifications</string>
+    <string name="changelog_title">Journal des modifications</string>
+    <string name="loading_changelog">Chargement du journal des modifications…</string>
+    <string name="cached">En cache</string>
+    <string name="current">Actuelle</string>
+    <string name="old_releases">Anciennes versions</string>
+    <string name="changelog_section">Journal des modifications</string>
+    <string name="version_code">Code de version</string>
+    <string name="namespace">Espace de noms</string>
+    <string name="telegram_channel">Telegram</string>
+
+    <!-- Onboarding -->
+    <string name="welcome_to">Bienvenue dans</string>
+    <string name="welcome_preparing_subtitle">Préparons tout pour vous.</string>
+    <string name="get_started">Commencer</string>
+
+    <string name="perm_required">Requis</string>
+    <string name="perm_permissions">Autorisations</string>
+    <string name="perm_intro_text">Ces autorisations sont nécessaires au bon fonctionnement de BeatWave. Veuillez les accorder pour continuer.</string>
+
+    <string name="perm_notif_title">Notifications</string>
+    <string name="perm_notif_desc">Sachez immédiatement quand votre musique est jouée et contrôlez-la depuis la barre de notifications.</string>
+
+    <string name="perm_install_title">Installation d&#39;applications</string>
+    <string name="perm_install_desc">Requis pour télécharger et installer les mises à jour de l&#39;application de manière fluide.</string>
+
+    <string name="feat_discover">Découvrir</string>
+    <string name="feat_features">Fonctionnalités</string>
+    <string name="feat_intro">Explorez tout ce que BeatWave a à offrir pour votre expérience musicale.</string>
+
+    <string name="feat_lyrics_title">Paroles intelligentes</string>
+    <string name="feat_lyrics_desc">Profitez de paroles synchronisées mot à mot pour des millions de chansons.</string>
+
+    <string name="feat_download_title">Lecture hors ligne</string>
+    <string name="feat_download_desc">Téléchargez vos morceaux préférés et écoutez-les n&#39;importe où, n&#39;importe quand.</string>
+
+    <string name="feat_quality_title">Qualité Premium</string>
+    <string name="feat_quality_desc">Écoutez en flux et téléchargez.</string>
+
+    <string name="feat_glass_title">Interface Verre liquide</string>
+    <string name="feat_glass_desc">Un design en verre dépoli inspiré d&#39;iOS dans toute l&#39;application.</string>
+
+    <string name="feat_discord_title">Discord Rich Presence</string>
+    <string name="feat_discord_desc">Affichez ce que vous écoutez directement sur votre profil Discord.</string>
+
+    <string name="feat_update_title">Mises à jour dynamiques</string>
+    <string name="feat_update_desc">Restez toujours à jour grâce à notre outil de mise à jour intégré.</string>
+
+    <string name="feat_license_title">Licence</string>
+    <string name="feat_license_desc">Licence publique générale v3.0</string>
+    <string name="feat_github_title">GitHub</string>
+    <string name="feat_github_desc">Projet open source</string>
+
+    <string name="join_telegram">Rejoindre notre canal Telegram</string>
+    <string name="welcome_update_check">Restez</string>
+    <string name="welcome_update_status">À jour</string>
+    <string name="welcome_update_intro">Assurez-vous de disposer des dernières fonctionnalités et améliorations de sécurité.</string>
+    <string name="welcome_checking_updates">Recherche de mises à jour…</string>
+    <string name="welcome_up_to_date">BeatWave est à jour !</string>
+    <string name="welcome_update_available">Une nouvelle version est disponible : %s</string>
+    <string name="welcome_everything_ready">Tout est désormais à jour</string>
+    <string name="commits_title">Commits</string>
+    <string name="error_loading_commits">Échec du chargement des commits parce que vous ne m&#39;avez pas payé ?</string>
+    <string name="commits">Commits</string>
+    <string name="view_commit_history">Parcourir les modifications récentes sur la branche principale</string>
+    <string name="suggestions">Suggestions</string>
+    <string name="comments">Commentaires</string>
+    <string name="no_comments">Aucun commentaire trouvé</string>
+    <string name="type_message">Saisissez un message…</string>
+    <string name="send">Envoyer</string>
+    <string name="clear_downloaded_updates_auto_info">Suppression dynamique automatique après un jour.</string>
+    <string name="update_info_badge">Infos &amp; Astuces</string>
+    <string name="update_info_title">Informations de mise à jour</string>
+    <string name="manual_delete_hint_title">Nettoyage manuel</string>
+    <string name="manual_delete_hint_desc">Vous pouvez également effectuer une suppression manuelle. La suppression des anciens APK permettra à l&#39;outil de mise à jour de fonctionner correctement.</string>
+	
+
 	
