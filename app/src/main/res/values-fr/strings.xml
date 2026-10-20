@@ -264,15 +264,15 @@
     <string name="lossless_fallback_to_standard_audio">Audio sans perte indisponible, passage à l&#39;audio standard</string>
 
     <!-- Player action -->
-    <string name="action_like">J&#39;aime</string>
+    <string name="action_like">J\'aime</string>
     <string name="action_like_all">Tout aimer</string>
-    <string name="action_remove_like">Je n&#39;aime plus</string>
-    <string name="action_remove_like_all">Retirer tous les « J&#39;aime »</string>
+    <string name="action_remove_like">Je n\'aime plus</string>
+    <string name="action_remove_like_all">Retirer tous les « J\'aime »</string>
     <string name="action_shuffle_on">Lecture aléatoire activée</string>
     <string name="action_shuffle_off">Lecture aléatoire désactivée</string>
     <string name="repeat_mode_off">Mode répétition désactivé</string>
     <string name="repeat_mode_one">Répéter le morceau actuel</string>
-    <string name="repeat_mode_all">Répéter la file d&#39;attente</string>
+    <string name="repeat_mode_all">Répéter la file d\'attente</string>
 
     <!-- Queue Title -->
     <string name="queue_all_songs">Tous les titres</string>
