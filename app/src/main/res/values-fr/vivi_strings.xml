@@ -376,7 +376,7 @@
         <item quantity="other">%d secondes</item>
     </plurals>
 
-	    <!-- Player Settings -->
+	<!-- Player Settings -->
     <string name="disable_load_more_when_repeat_all">Désactiver le chargement supplémentaire en répétition globale</string>
     <string name="disable_load_more_when_repeat_all_desc">Ne pas charger automatiquement plus de titres et de contenus similaires lorsque le mode Tout répéter est activé</string>
     <string name="pause_music_when_media_is_muted">Mettre en pause lorsque le volume média est coupé</string>
@@ -480,7 +480,7 @@
     <string name="set_listenbrainz_token">Définir le jeton ListenBrainz</string>
     <string name="listenbrainz_token_set">Jeton ListenBrainz défini</string>
 
-	    <!-- Ringtone -->
+	<!-- Ringtone -->
     <string name="set_as_ringtone">Définir comme sonnerie</string>
     <string name="trim_ringtone">Rogner la sonnerie</string>
     <string name="trim_ringtone_desc">Sélectionnez la partie de \"%1$s\" à utiliser comme sonnerie. (Max 30s recommandé)</string>
@@ -699,7 +699,7 @@
     <string name="widget_cfg_done">Terminé</string>
     <string name="widget_no_lyrics">Aucune parole disponible</string>
 
-	    <!-- Player Client Settings -->
+	<!-- Player Client Settings -->
     <string name="player_client">Client du lecteur</string>
     <string name="player_client_android_vr">Android VR</string>
     <string name="player_client_android_vr_desc">Option la plus rapide. URL de flux directes sans déchiffrement de signature. Recommandé pour la plupart des utilisateurs.</string>
@@ -839,7 +839,7 @@
     <string name="unblock">Débloquer</string>
     <string name="user_blocked_by_host">Utilisateur bloqué par l\'hôte</string>
 
-	    <!-- AI Lyrics Translation -->
+	<!-- AI Lyrics Translation -->
     <string name="ai_lyrics_translation">Traduction des paroles par IA</string>
     <string name="ai_translating_lyrics">Traduction des paroles en cours…</string>
     <string name="ai_lyrics_translated">Paroles traduites</string>
@@ -939,7 +939,7 @@
     <string name="play_on_app">Lire sur BeatWave</string>
     <string name="recognized_track">Titre reconnu</string>
 
-	    <!-- CSV Import Strings -->
+	<!-- CSV Import Strings -->
     <string name="map_csv_columns">Associer les colonnes CSV</string>
     <string name="first_row_is_header">La première ligne est l\'en-tête</string>
     <string name="artist_name_column">Colonne du nom de l\'artiste</string>
@@ -1030,7 +1030,7 @@
     <string name="namespace">Espace de noms</string>
     <string name="telegram_channel">Telegram</string>
 
-	    <!-- Onboarding -->
+	<!-- Onboarding -->
     <string name="welcome_to">Bienvenue sur</string>
     <string name="welcome_preparing_subtitle">Préparons tout pour vous.</string>
     <string name="get_started">Commencer</string>
@@ -1123,7 +1123,7 @@
     <string name="tidal_instance_url_hint">https://votre-serveur.exemple.com</string>
     <string name="tidal_beta_info">Bêta. Laissez l\'URL du serveur vide pour utiliser les serveurs publics automatiques. Pour l\'auto-hébergement, collez l\'URL de base de votre propre serveur ci-dessus — il sera essayé en premier.</string>
 
-	    <!-- Spotify Import -->
+	<!-- Spotify Import -->
     <string name="spotify">Spotify</string>
     <string name="import_action">Importer</string>
     <string name="enable_spotify_import">Importer Spotify</string>
@@ -1303,5 +1303,3 @@
     <string name="font_outfit_desc">Une police sans-serif géométrique propre et moderne.</string>
     <string name="font_plus_jakarta_sans_desc">Une police de caractères sans-serif géométrique chaleureuse et haut de gamme.</string>
 </resources>
-
-
