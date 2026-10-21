@@ -545,10 +545,10 @@
     <string name="wrapped_album_listening_time">Vous avez écouté cet album pendant %d minutes</string>
     <string name="wrapped_album_listening_time_minutes">%d minutes</string>
     <string name="wrapped_no_data">Aucune donnée</string>
-    <string name="wrapped_top_5_artists_title">Votre artiste préféré&#10;de l\'année</string>
+    <string name="wrapped_top_5_artists_title">Votre artiste préféré\nde l\'année</string>
     <string name="wrapped_artist_image_content_description">Image de l\'artiste</string>
     <string name="wrapped_artist_listening_time">%d minutes</string>
-    <string name="wrapped_top_5_songs_title">Vos morceaux préférés&#10;de l\'année</string>
+    <string name="wrapped_top_5_songs_title">Vos morceaux préférés\nde l\'année</string>
     <string name="wrapped_top_song_album_art_content_description">Pochette d\'album</string>
     <string name="wrapped_top_artist_title">Votre artiste préféré de l\'année est</string>
     <string name="wrapped_top_artist_image_content_description">Image du meilleur artiste</string>
