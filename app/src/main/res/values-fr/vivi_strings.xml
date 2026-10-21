@@ -105,7 +105,7 @@
     <string name="show_artist_background_video">Afficher la vidéo d\'arrière-plan de l\'artiste</string>
     <string name="show_artist_background_video_desc">Afficher une vidéo d\'animation en arrière-plan derrière l\'image de l\'artiste</string>
 
-	    <!-- Menu descriptions -->
+	<!-- Menu descriptions -->
     <string name="download_playlist_desc">Télécharger tous les titres pour une lecture hors ligne</string>
     <string name="remove_download_playlist_desc">Supprimer tous les titres téléchargés de cette playlist</string>
     <string name="download_in_progress_desc">Téléchargement en cours</string>
@@ -177,7 +177,7 @@
     <string name="login_settings">Paramètres de connexion</string>
     <string name="general_settings">Paramètres généraux</string>
 
-	    <string name="player_background_style">Style d\'arrière-plan du lecteur</string>
+	<string name="player_background_style">Style d\'arrière-plan du lecteur</string>
     <string name="apple_music_player_v17">Lecteur Apple Music V17 (Bêta)</string>
     <string name="apple_music_player_v17_description">Disposition alternative du lecteur en plein écran dans le style Apple Music. Les autocollants personnalisés ne sont pas affichés lorsque cette option est active.</string>
     <string name="apple_music_player_v17_options">Options du lecteur Apple Music V17</string>
@@ -281,7 +281,7 @@
     <string name="yt_sync">Synchronisation automatique avec le compte</string>
     <string name="more_content">Plus de contenu</string>
 
-	    <!-- Playlist cover edit -->
+	<!-- Playlist cover edit -->
     <string name="edit_playlist_cover">Modifier la couverture de la playlist</string>
     <string name="edit_playlist_cover_note">Remarque : votre compte doit être associé à un numéro de téléphone et vérifié sur YouTube Music pour modifier la couverture de la playlist.</string>
     <string name="edit_playlist_cover_note_wait">Après avoir sélectionné une image, veuillez patienter un moment pour que la nouvelle couverture apparaisse dans votre playlist.</string>
